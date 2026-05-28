@@ -18,3 +18,9 @@ variable "cake_agents_chart_version" {
   type        = string
   description = "cake-agents chart version. Get the latest from Cake."
 }
+
+variable "oidc_client_secret" {
+  type        = string
+  description = "Client secret for the OIDC provider. Required if `oidc` is set in the module config."
+  sensitive   = true
+}

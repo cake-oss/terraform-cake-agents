@@ -3,3 +3,5 @@ hostname  = "agents.example.com"
 region    = "us-east-2"
 
 cake_agents_chart_version = "0.4.0"
+
+oidc_client_secret = "get_me_from_your_oidc_provider"
