@@ -1,0 +1,12 @@
+formatter: "markdown"
+version: ""
+
+output:
+  file: "README.md"
+  mode: inject
+
+settings:
+  lockfile: false
+
+recursive:
+  enabled: true
