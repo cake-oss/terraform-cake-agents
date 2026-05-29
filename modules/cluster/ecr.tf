@@ -3,7 +3,7 @@
 # this requires providing your own var.registry.
 
 locals {
-  upstream_account_id = split(".", vars.cake_agents_chart_upstream_registry)[0]
+  upstream_account_id = split(".", var.cake_agents_chart_upstream_registry)[0]
 }
 
 resource "aws_iam_role" "pull_through_cache" {
