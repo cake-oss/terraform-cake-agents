@@ -2,6 +2,10 @@
 # var.cake_agents_chart_upstream_registry into the caller's ECR. Disabling
 # this requires providing your own var.registry.
 
+locals {
+  upstream_account_id = split(".", vars.cake_agents_chart_upstream_registry)[0]
+}
+
 resource "aws_iam_role" "pull_through_cache" {
   count = var.enable_ecr_pull_through ? 1 : 0
 
@@ -9,11 +13,20 @@ resource "aws_iam_role" "pull_through_cache" {
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { Service = "pullthroughcache.ecr.amazonaws.com" }
-      Action    = "sts:AssumeRole"
-    }]
+    Statement = [
+      {
+        Effect    = "Allow"
+        Principal = { Service = "pullthroughcache.ecr.amazonaws.com" }
+        Action    = "sts:AssumeRole"
+      },
+      {
+        Effect = "Allow",
+        Principal = {
+          AWS = "arn:aws:iam::${local.upstream_account_id}:root"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
   })
 }
 
