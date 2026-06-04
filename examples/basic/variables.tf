@@ -11,7 +11,6 @@ variable "hostname" {
 variable "region" {
   type        = string
   description = "AWS region to deploy into."
-  default     = "us-east-2"
 }
 
 variable "cake_agents_chart_version" {
