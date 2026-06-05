@@ -27,9 +27,9 @@ module "eks" {
   authentication_mode                      = "API"
   enable_cluster_creator_admin_permissions = true
 
-  access_entries = length(data.aws_iam_roles.sso_admin.arns) == 0 ? {} : {
+  access_entries = (local.sso_admin_arn == "" || local.caller_is_sso_admin) ? {} : {
     sso_admin = {
-      principal_arn = tolist(data.aws_iam_roles.sso_admin.arns)[0]
+      principal_arn = local.sso_admin_arn
       policy_associations = {
         cluster_admin = {
           policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
