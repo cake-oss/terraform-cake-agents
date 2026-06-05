@@ -25,7 +25,7 @@ This requires `helm` and `aws` CLIs on the machine running `terraform apply`. Se
 ## Requirements
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.9 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 6.0 |
 | <a name="requirement_helm"></a> [helm](#requirement\_helm) | >= 3.0.0 |
@@ -37,7 +37,7 @@ This requires `helm` and `aws` CLIs on the machine running `terraform apply`. Se
 ## Providers
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 6.0 |
 | <a name="provider_helm"></a> [helm](#provider\_helm) | >= 3.0.0 |
 | <a name="provider_kubectl"></a> [kubectl](#provider\_kubectl) | >= 2.1.0 |
@@ -48,7 +48,7 @@ This requires `helm` and `aws` CLIs on the machine running `terraform apply`. Se
 ## Modules
 
 | Name | Source | Version |
-|------|--------|---------|
+| ---- | ------ | ------- |
 | <a name="module_cake_agents_db"></a> [cake\_agents\_db](#module\_cake\_agents\_db) | terraform-aws-modules/rds/aws | ~> 6.0 |
 | <a name="module_eks"></a> [eks](#module\_eks) | terraform-aws-modules/eks/aws | 21.3.2 |
 | <a name="module_karpenter"></a> [karpenter](#module\_karpenter) | terraform-aws-modules/eks/aws//modules/karpenter | 21.3.2 |
@@ -57,7 +57,7 @@ This requires `helm` and `aws` CLIs on the machine running `terraform apply`. Se
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [aws_db_subnet_group.cake_agents](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/db_subnet_group) | resource |
 | [aws_ec2_tag.private_subnet_internal_elb](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ec2_tag) | resource |
 | [aws_ec2_tag.private_subnet_karpenter](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ec2_tag) | resource |
@@ -104,7 +104,7 @@ This requires `helm` and `aws` CLIs on the machine running `terraform apply`. Se
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_cake_agents_chart_repository_prefix"></a> [cake\_agents\_chart\_repository\_prefix](#input\_cake\_agents\_chart\_repository\_prefix) | ECR pull-through cache repository prefix. The chart resolves to <account>.dkr.ecr.<region>.amazonaws.com/<prefix>/charts/cake-agents. | `string` | `"cake"` | no |
 | <a name="input_cake_agents_chart_upstream_registry"></a> [cake\_agents\_chart\_upstream\_registry](#input\_cake\_agents\_chart\_upstream\_registry) | Upstream ECR registry hosting the cake-agents chart. Used as the pull-through cache upstream. | `string` | `"684117700585.dkr.ecr.us-east-2.amazonaws.com"` | no |
 | <a name="input_cake_agents_chart_version"></a> [cake\_agents\_chart\_version](#input\_cake\_agents\_chart\_version) | Version of the cake-agents Helm chart to deploy. | `string` | n/a | yes |
@@ -114,6 +114,7 @@ This requires `helm` and `aws` CLIs on the machine running `terraform apply`. Se
 | <a name="input_database_multi_az"></a> [database\_multi\_az](#input\_database\_multi\_az) | Provision the RDS instance in multi-AZ mode. Required for production-grade availability. | `bool` | `false` | no |
 | <a name="input_deploy_role_name"></a> [deploy\_role\_name](#input\_deploy\_role\_name) | IAM role granted admin actions on the per-cluster KMS keys so it can re-apply this module. Set to the role used by your CI/CD; leave null when applying with admin credentials (the account root already has access). | `string` | `null` | no |
 | <a name="input_enable_ecr_pull_through"></a> [enable\_ecr\_pull\_through](#input\_enable\_ecr\_pull\_through) | Provision the ECR pull-through cache rule for the cake-agents chart and warm it before installing Helm. Recommended; disable only if you mirror the chart yourself via registry. | `bool` | `true` | no |
+| <a name="input_extra_hosts"></a> [extra\_hosts](#input\_extra\_hosts) | Additional entries appended to the cake-agents controlPlane.extraHosts. The OIDC issuer host is added automatically. | `list(string)` | `[]` | no |
 | <a name="input_hostname"></a> [hostname](#input\_hostname) | Apex hostname for the cake-agents Ingress (e.g. agents.example.com). Must be covered by certificate\_arn and resolvable via route53\_zone\_id. | `string` | n/a | yes |
 | <a name="input_kubernetes_version"></a> [kubernetes\_version](#input\_kubernetes\_version) | EKS Kubernetes minor version. | `string` | `"1.35"` | no |
 | <a name="input_name"></a> [name](#input\_name) | Cluster name. Used for the EKS cluster, VPC (when created), and the karpenter.sh/discovery tag value. | `string` | n/a | yes |
@@ -130,7 +131,7 @@ This requires `helm` and `aws` CLIs on the machine running `terraform apply`. Se
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_cluster_certificate_authority_data"></a> [cluster\_certificate\_authority\_data](#output\_cluster\_certificate\_authority\_data) | Base64-encoded cluster CA certificate. |
 | <a name="output_cluster_endpoint"></a> [cluster\_endpoint](#output\_cluster\_endpoint) | EKS cluster API endpoint. |
 | <a name="output_cluster_name"></a> [cluster\_name](#output\_cluster\_name) | EKS cluster name. |

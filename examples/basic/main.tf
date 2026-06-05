@@ -20,6 +20,8 @@ module "cake_agents" {
   hostname = var.hostname
   vpc_cidr = var.vpc_cidr
 
+  extra_hosts = var.extra_hosts
+
   oidc = {
     provider_id   = var.oidc_provider_id
     domain        = var.oidc_domain

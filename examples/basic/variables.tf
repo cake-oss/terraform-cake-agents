@@ -24,6 +24,12 @@ variable "cake_agents_chart_version" {
   description = "cake-agents chart version. Get the latest from Cake."
 }
 
+variable "extra_hosts" {
+  type        = list(string)
+  description = "Additional entries appended to the cake-agents controlPlane.extraHosts. The OIDC issuer host is added automatically."
+  default     = []
+}
+
 variable "oidc_provider_id" {
   type        = string
   description = "OIDC provider ID used to identify the provider in Cake Agents (e.g. \"google\")."

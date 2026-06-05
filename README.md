@@ -59,7 +59,7 @@ See [examples/github-actions](examples/github-actions/). The example provisions 
 ## Requirements
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.9 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 6.0 |
 | <a name="requirement_helm"></a> [helm](#requirement\_helm) | >= 3.0.0 |
@@ -71,20 +71,20 @@ See [examples/github-actions](examples/github-actions/). The example provisions 
 ## Providers
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 6.0 |
 
 ## Modules
 
 | Name | Source | Version |
-|------|--------|---------|
+| ---- | ------ | ------- |
 | <a name="module_cluster"></a> [cluster](#module\_cluster) | ./modules/cluster | n/a |
 | <a name="module_dns"></a> [dns](#module\_dns) | ./modules/dns | n/a |
 
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
 | [aws_ecr_authorization_token.ecr](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ecr_authorization_token) | data source |
 | [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
@@ -92,7 +92,7 @@ See [examples/github-actions](examples/github-actions/). The example provisions 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_cake_agents_chart_version"></a> [cake\_agents\_chart\_version](#input\_cake\_agents\_chart\_version) | Version of the cake-agents Helm chart to deploy. | `string` | n/a | yes |
 | <a name="input_certificate_arn"></a> [certificate\_arn](#input\_certificate\_arn) | Existing validated ACM certificate ARN covering hostname. Required when zone\_id is set; created automatically when zone\_id is null. | `string` | `null` | no |
 | <a name="input_database_deletion_protection"></a> [database\_deletion\_protection](#input\_database\_deletion\_protection) | Set deletion\_protection on the RDS instance. | `bool` | `false` | no |
@@ -100,6 +100,7 @@ See [examples/github-actions](examples/github-actions/). The example provisions 
 | <a name="input_database_multi_az"></a> [database\_multi\_az](#input\_database\_multi\_az) | Provision RDS in multi-AZ mode. | `bool` | `false` | no |
 | <a name="input_deploy_role_name"></a> [deploy\_role\_name](#input\_deploy\_role\_name) | IAM role granted KMS admin on the per-cluster keys. Leave null when applying with admin credentials. | `string` | `null` | no |
 | <a name="input_enable_ecr_pull_through"></a> [enable\_ecr\_pull\_through](#input\_enable\_ecr\_pull\_through) | Set up an ECR pull-through cache for the cake-agents chart. Recommended. | `bool` | `true` | no |
+| <a name="input_extra_hosts"></a> [extra\_hosts](#input\_extra\_hosts) | Additional entries appended to the cake-agents controlPlane.extraHosts. The OIDC issuer host is added automatically. | `list(string)` | `[]` | no |
 | <a name="input_hostname"></a> [hostname](#input\_hostname) | Apex hostname the cake-agents UI/API is served from (e.g. agents.example.com). | `string` | n/a | yes |
 | <a name="input_kubernetes_version"></a> [kubernetes\_version](#input\_kubernetes\_version) | EKS Kubernetes minor version. | `string` | `"1.35"` | no |
 | <a name="input_name"></a> [name](#input\_name) | Cluster name. Used for the EKS cluster, VPC (when created), KMS aliases, and the karpenter.sh/discovery tag value. | `string` | n/a | yes |
@@ -111,12 +112,12 @@ See [examples/github-actions](examples/github-actions/). The example provisions 
 | <a name="input_slack"></a> [slack](#input\_slack) | Optional Slack credentials for the cake-agents Helm chart. | <pre>object({<br/>    signing_secret = string<br/>    bot_token      = string<br/>  })</pre> | `null` | no |
 | <a name="input_vpc_cidr"></a> [vpc\_cidr](#input\_vpc\_cidr) | CIDR block for a new VPC. Mutually exclusive with vpc\_id. | `string` | `null` | no |
 | <a name="input_vpc_id"></a> [vpc\_id](#input\_vpc\_id) | Existing VPC ID. When set, also provide private\_subnet\_ids and public\_subnet\_ids. Mutually exclusive with vpc\_cidr. | `string` | `null` | no |
-| <a name="input_zone_id"></a> [zone\_id](#input\_zone\_id) | Existing Route53 hosted zone ID for hostname. If null, a new zone is created (and you must delegate it from the parent zone — see the delegation\_records output). | `string` | `null` | no |
+| <a name="input_zone_id"></a> [zone\_id](#input\_zone\_id) | Existing Route53 hosted zone ID for hostname. If null, a new zone is created (and you must delegate it from the parent zone — see the nameservers output). | `string` | `null` | no |
 
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_acm_validation_records"></a> [acm\_validation\_records](#output\_acm\_validation\_records) | ACM validation CNAMEs (informational — already created in the managed zone). Null when bringing your own zone. |
 | <a name="output_cluster_endpoint"></a> [cluster\_endpoint](#output\_cluster\_endpoint) | EKS cluster API endpoint. |
 | <a name="output_cluster_name"></a> [cluster\_name](#output\_cluster\_name) | EKS cluster name. |

@@ -108,6 +108,12 @@ variable "database_final_snapshot" {
   default     = false
 }
 
+variable "extra_hosts" {
+  type        = list(string)
+  description = "Additional entries appended to the cake-agents controlPlane.extraHosts. The OIDC issuer host is added automatically."
+  default     = []
+}
+
 variable "oidc" {
   type = object({
     provider_id   = string

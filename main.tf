@@ -36,6 +36,8 @@ module "cluster" {
   database_deletion_protection = var.database_deletion_protection
   database_final_snapshot      = var.database_final_snapshot
 
+  extra_hosts = var.extra_hosts
+
   oidc  = var.oidc
   slack = var.slack
 }

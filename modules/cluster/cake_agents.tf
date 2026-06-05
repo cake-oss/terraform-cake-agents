@@ -74,6 +74,10 @@ resource "helm_release" "cake_agents" {
       }
       controlPlane = {
         host = var.hostname
+        extraHosts = concat(
+          var.oidc == null ? [] : [regex("^https?://([^/:]+)", var.oidc.issuer)[0]],
+          var.extra_hosts,
+        )
       }
       pathPrefix = "/"
       postgresql = {
@@ -90,12 +94,6 @@ resource "helm_release" "cake_agents" {
           create = false
           name   = kubernetes_secret_v1.cake_agents_slack_creds[0].metadata[0].name
         }
-      }
-    },
-    var.oidc == null ? {} : {
-      controlPlane = {
-        host       = var.hostname
-        extraHosts = [regex("^https?://([^/:]+)", var.oidc.issuer)[0]]
       }
     },
     var.oidc == null ? {} : {
