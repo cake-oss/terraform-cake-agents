@@ -4,7 +4,7 @@ resource "aws_route53_zone" "this" {
 
 # Apex + wildcard cert, DNS-validated against the zone above. On first apply
 # validation hangs until the parent zone is delegated to this zone's name
-# servers — see the delegation_records output.
+# servers — see the nameservers output.
 resource "aws_acm_certificate" "wildcard" {
   domain_name               = var.name
   subject_alternative_names = ["*.${var.name}"]

@@ -2,7 +2,7 @@
 
 Route53 hosted zone + validated wildcard ACM certificate for a cake-agents cluster.
 
-Outputs the `delegation_records.ns` list — add those NS records to your parent zone so the child zone resolves. Certificate validation hangs on first apply until that delegation lands.
+Outputs the `nameservers` list — add those NS records to your parent zone so the child zone resolves. Certificate validation hangs on first apply until that delegation lands.
 
 If you already manage DNS elsewhere, skip this module entirely and pass `zone_id` + `certificate_arn` directly to the root module.
 
@@ -43,8 +43,9 @@ No modules.
 
 | Name | Description |
 |------|-------------|
+| <a name="output_acm_validation_records"></a> [acm\_validation\_records](#output\_acm\_validation\_records) | ACM validation CNAMEs (informational — they're already created in this zone). |
 | <a name="output_certificate_arn"></a> [certificate\_arn](#output\_certificate\_arn) | Validated ACM certificate ARN. Pass to the cluster module as certificate\_arn. |
-| <a name="output_delegation_records"></a> [delegation\_records](#output\_delegation\_records) | NS records to add to the parent zone for delegation, plus the ACM validation CNAMEs (informational — they're already created in this zone). |
+| <a name="output_nameservers"></a> [nameservers](#output\_nameservers) | NS records to add to the parent zone for delegation. Depends only on the hosted zone, so it resolves from a zone-only targeted apply. |
 | <a name="output_zone_id"></a> [zone\_id](#output\_zone\_id) | Route53 hosted zone ID. Pass to the cluster module as route53\_zone\_id. |
 | <a name="output_zone_name"></a> [zone\_name](#output\_zone\_name) | Route53 hosted zone name. |
 <!-- END_TF_DOCS -->

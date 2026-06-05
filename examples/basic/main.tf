@@ -49,9 +49,14 @@ module "cake_agents" {
   cake_agents_chart_version = var.cake_agents_chart_version
 }
 
-output "delegation_records" {
-  description = "Add the ns records to your parent zone to complete DNS delegation."
-  value       = module.cake_agents.delegation_records
+output "nameservers" {
+  description = "Add these NS records to your parent zone to complete DNS delegation."
+  value       = module.cake_agents.nameservers
+}
+
+output "acm_validation_records" {
+  description = "ACM validation CNAMEs (informational — already created in the managed zone)."
+  value       = module.cake_agents.acm_validation_records
 }
 
 output "cluster_name" {

@@ -13,16 +13,18 @@ output "certificate_arn" {
   value       = aws_acm_certificate_validation.wildcard.certificate_arn
 }
 
-output "delegation_records" {
-  description = "NS records to add to the parent zone for delegation, plus the ACM validation CNAMEs (informational — they're already created in this zone)."
-  value = {
-    ns = aws_route53_zone.this.name_servers
-    validation = [
-      for dvo in aws_acm_certificate.wildcard.domain_validation_options : {
-        name  = dvo.resource_record_name
-        type  = dvo.resource_record_type
-        value = dvo.resource_record_value
-      }
-    ]
-  }
+output "nameservers" {
+  description = "NS records to add to the parent zone for delegation. Depends only on the hosted zone, so it resolves from a zone-only targeted apply."
+  value       = aws_route53_zone.this.name_servers
+}
+
+output "acm_validation_records" {
+  description = "ACM validation CNAMEs (informational — they're already created in this zone)."
+  value = [
+    for dvo in aws_acm_certificate.wildcard.domain_validation_options : {
+      name  = dvo.resource_record_name
+      type  = dvo.resource_record_type
+      value = dvo.resource_record_value
+    }
+  ]
 }

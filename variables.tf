@@ -17,7 +17,7 @@ variable "cake_agents_chart_version" {
 
 variable "zone_id" {
   type        = string
-  description = "Existing Route53 hosted zone ID for hostname. If null, a new zone is created (and you must delegate it from the parent zone — see the delegation_records output)."
+  description = "Existing Route53 hosted zone ID for hostname. If null, a new zone is created (and you must delegate it from the parent zone — see the nameservers output)."
   default     = null
 }
 

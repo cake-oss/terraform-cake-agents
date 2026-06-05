@@ -128,9 +128,10 @@ See [examples/github-actions](examples/github-actions/). The example provisions 
 
 | Name | Description |
 |------|-------------|
+| <a name="output_acm_validation_records"></a> [acm\_validation\_records](#output\_acm\_validation\_records) | ACM validation CNAMEs (informational — already created in the managed zone). Null when bringing your own zone. |
 | <a name="output_cluster_endpoint"></a> [cluster\_endpoint](#output\_cluster\_endpoint) | EKS cluster API endpoint. |
 | <a name="output_cluster_name"></a> [cluster\_name](#output\_cluster\_name) | EKS cluster name. |
-| <a name="output_delegation_records"></a> [delegation\_records](#output\_delegation\_records) | NS records to add to your parent zone for delegation, plus ACM validation CNAMEs (informational). Null when bringing your own zone. |
 | <a name="output_hostname"></a> [hostname](#output\_hostname) | Apex hostname for cake-agents. |
+| <a name="output_nameservers"></a> [nameservers](#output\_nameservers) | NS records to add to your parent zone for delegation. Null when bringing your own zone. Resolves from a zone-only targeted apply, so you can delegate before the full apply. |
 | <a name="output_vpc_id"></a> [vpc\_id](#output\_vpc\_id) | ID of the VPC the cluster runs in. |
 <!-- END_TF_DOCS -->

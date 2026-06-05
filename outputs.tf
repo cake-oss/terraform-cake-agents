@@ -18,7 +18,12 @@ output "hostname" {
   value       = var.hostname
 }
 
-output "delegation_records" {
-  description = "NS records to add to your parent zone for delegation, plus ACM validation CNAMEs (informational). Null when bringing your own zone."
-  value       = var.zone_id == null ? module.dns[0].delegation_records : null
+output "nameservers" {
+  description = "NS records to add to your parent zone for delegation. Null when bringing your own zone. Resolves from a zone-only targeted apply, so you can delegate before the full apply."
+  value       = var.zone_id == null ? module.dns[0].nameservers : null
+}
+
+output "acm_validation_records" {
+  description = "ACM validation CNAMEs (informational — already created in the managed zone). Null when bringing your own zone."
+  value       = var.zone_id == null ? module.dns[0].acm_validation_records : null
 }
