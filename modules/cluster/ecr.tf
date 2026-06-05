@@ -19,13 +19,6 @@ resource "aws_iam_role" "pull_through_cache" {
         Principal = { Service = "pullthroughcache.ecr.amazonaws.com" }
         Action    = "sts:AssumeRole"
       },
-      {
-        Effect = "Allow",
-        Principal = {
-          AWS = "arn:aws:iam::${local.upstream_account_id}:root"
-        }
-        Action = "sts:AssumeRole"
-      }
     ]
   })
 }

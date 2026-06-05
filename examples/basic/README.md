@@ -18,6 +18,6 @@ terraform init
 terraform apply
 ```
 
-First apply will hang on ACM cert validation until you delegate the child zone. The `terraform apply` output prints `delegation_records.ns` — add those as NS records in your parent zone, then let the apply continue (it polls until validation succeeds).
+First apply will hang on ACM cert validation until you delegate the child zone. The `nameservers` output lists the NS records — add those in your parent zone, then let the apply continue (it polls until validation succeeds).
 
 If validation times out, re-run `terraform apply`.

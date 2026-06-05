@@ -14,10 +14,42 @@ cp terraform.tfvars.example terraform.tfvars
 # edit name, hostname, region, cake_agents_chart_version
 
 terraform init
+```
+
+The first apply is staged. Run the targeted applies below in order, then finish with a full apply.
+
+### 1. Create and delegate the DNS zone (module-managed DNS)
+
+If you let the module create the Route53 zone (the default — `zone_id` unset), provision the zone first so you can delegate it before the ACM certificate validation blocks the rest of the apply:
+
+```bash
+terraform apply -target='module.cake_agents.module.dns[0].aws_route53_zone.this'
+terraform output nameservers   # prints the NS records to delegate
+```
+
+The `nameservers` output depends only on the hosted zone, so it resolves from this zone-only apply. **Add those as NS records in your parent (upstream) DNS zone before continuing.** Delegation must resolve or ACM validation in the full apply will hang. Skip this step entirely if you bring your own zone (`zone_id` set).
+
+### 2. Bring up the cluster (and warm the pull-through cache)
+
+The `kubernetes`, `helm`, and `kubectl` providers are configured from the cluster's API endpoint (`module.cluster.cluster_endpoint`). Until the EKS cluster exists that endpoint is empty, and the `alekc/kubectl` provider — unlike the hashicorp providers, which defer on unknown inputs — fails to configure with `no configuration has been provided, try setting KUBERNETES_MASTER`. So a single full apply from scratch errors before it can create the cluster.
+
+Bring the EKS cluster up first so the endpoint becomes a known value. The same apply also warms the ECR pull-through cache (when `enable_ecr_pull_through = true`, the default and recommended setting) so the Helm provider doesn't later fail fast on an uncached chart:
+
+```bash
+terraform apply \
+  -target='module.cake_agents.module.cluster.module.eks' \
+  -target='module.cake_agents.module.cluster.null_resource.warmup_chart'
+```
+
+If you've set `enable_ecr_pull_through = false`, drop the second `-target`.
+
+### 3. Full apply
+
+```bash
 terraform apply
 ```
 
-First apply will pause on ACM certificate validation. The output prints `delegation_records.ns` — add those as NS records in your parent DNS zone, then let the apply finish (it polls until validation lands). If it times out, re-run `terraform apply`.
+With the cluster up, the Kubernetes providers configure against the real endpoint, and this finishes the remaining resources and polls until ACM validation lands. If it times out waiting on DNS, confirm the NS delegation from step 1 has propagated and re-run `terraform apply`.
 
 ## Prerequisites
 

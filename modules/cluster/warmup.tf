@@ -39,5 +39,8 @@ resource "null_resource" "warmup_chart" {
     EOT
   }
 
-  depends_on = [aws_ecr_pull_through_cache_rule.cake_agents]
+  depends_on = [
+    aws_ecr_pull_through_cache_rule.cake_agents,
+    aws_iam_role_policy.pull_through_cache,
+  ]
 }
