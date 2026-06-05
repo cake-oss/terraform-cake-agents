@@ -46,6 +46,7 @@ No modules.
 | <a name="output_acm_validation_records"></a> [acm\_validation\_records](#output\_acm\_validation\_records) | ACM validation CNAMEs (informational — they're already created in this zone). |
 | <a name="output_certificate_arn"></a> [certificate\_arn](#output\_certificate\_arn) | Validated ACM certificate ARN. Pass to the cluster module as certificate\_arn. |
 | <a name="output_nameservers"></a> [nameservers](#output\_nameservers) | NS records to add to the parent zone for delegation. Depends only on the hosted zone, so it resolves from a zone-only targeted apply. |
+| <a name="output_nameservers_bind"></a> [nameservers\_bind](#output\_nameservers\_bind) | NS records in BIND zone-file format, ready to paste into the parent zone. |
 | <a name="output_zone_id"></a> [zone\_id](#output\_zone\_id) | Route53 hosted zone ID. Pass to the cluster module as route53\_zone\_id. |
 | <a name="output_zone_name"></a> [zone\_name](#output\_zone\_name) | Route53 hosted zone name. |
 <!-- END_TF_DOCS -->

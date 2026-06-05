@@ -18,6 +18,14 @@ output "nameservers" {
   value       = aws_route53_zone.this.name_servers
 }
 
+output "nameservers_bind" {
+  description = "NS records in BIND zone-file format, ready to paste into the parent zone."
+  value = join("\n", [
+    for ns in aws_route53_zone.this.name_servers :
+    "${trimsuffix(aws_route53_zone.this.name, ".")}. 172800 IN NS ${ns}."
+  ])
+}
+
 output "acm_validation_records" {
   description = "ACM validation CNAMEs (informational — they're already created in this zone)."
   value = [
