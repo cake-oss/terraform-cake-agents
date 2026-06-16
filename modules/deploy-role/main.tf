@@ -258,6 +258,7 @@ data "aws_iam_policy_document" "required" {
       "s3:DeleteObjectVersion",
       "s3:GetBucketAcl",
       "s3:GetBucketLocation",
+      "s3:GetBucketPolicy",
       "s3:GetBucketTagging",
       "s3:ListBucket",
       "s3:ListBucketVersions",
