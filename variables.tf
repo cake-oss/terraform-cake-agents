@@ -108,6 +108,35 @@ variable "database_final_snapshot" {
   default     = false
 }
 
+variable "enable_s3_object_storage" {
+  type        = bool
+  description = "Provision S3 object storage for cake-agents and configure the Helm chart to use it."
+  default     = true
+}
+
+variable "s3_bucket_name_prefix" {
+  type        = string
+  description = "Prefix for the generated S3 bucket name used by cake-agents object storage. When null, a prefix is generated from name."
+  default     = null
+
+  validation {
+    condition     = var.s3_bucket_name_prefix == null || length(var.s3_bucket_name_prefix) <= 37
+    error_message = "s3_bucket_name_prefix must be 37 characters or fewer so Terraform can append a generated suffix."
+  }
+}
+
+variable "s3_prefix" {
+  type        = string
+  description = "Prefix inside the S3 bucket used by cake-agents."
+  default     = "sessions"
+}
+
+variable "s3_force_destroy" {
+  type        = bool
+  description = "Whether to force-destroy the cake-agents S3 bucket even when it contains objects."
+  default     = false
+}
+
 variable "extra_hosts" {
   type        = list(string)
   description = "Additional entries appended to the cake-agents controlPlane.extraHosts. The OIDC issuer host is added automatically."

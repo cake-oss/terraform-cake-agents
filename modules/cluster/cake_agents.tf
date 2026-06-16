@@ -88,6 +88,14 @@ resource "helm_release" "cake_agents" {
         existingSecretKey = "connection_string"
       }
     },
+    var.enable_s3_object_storage ? {
+      s3 = {
+        enabled = true
+        bucket  = aws_s3_bucket.cake_agents[0].bucket
+        region  = data.aws_region.current.region
+        prefix  = var.s3_prefix
+      }
+    } : {},
     var.slack == null ? {} : {
       slack = {
         secret = {
@@ -119,6 +127,7 @@ resource "helm_release" "cake_agents" {
     kubernetes_secret_v1.cake_agents_db_creds,
     kubernetes_secret_v1.cake_agents_slack_creds,
     kubernetes_secret_v1.cake_agents_oidc_creds,
+    aws_eks_pod_identity_association.cake_agents_s3,
     null_resource.warmup_chart,
   ]
 }
