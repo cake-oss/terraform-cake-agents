@@ -256,10 +256,15 @@ data "aws_iam_policy_document" "required" {
       "s3:DeleteBucketTagging",
       "s3:DeleteObject",
       "s3:DeleteObjectVersion",
-      "s3:GetBucketAcl",
-      "s3:GetBucketLocation",
-      "s3:GetBucketPolicy",
-      "s3:GetBucketTagging",
+      # The AWS provider refreshes legacy aws_s3_bucket state by probing
+      # bucket-level subresources, even when this module does not manage
+      # them explicitly. Keep read coverage broad enough for refresh while
+      # write access remains limited to bucket lifecycle + tagging.
+      "s3:GetAccelerateConfiguration",
+      "s3:GetBucket*",
+      "s3:GetEncryptionConfiguration",
+      "s3:GetLifecycleConfiguration",
+      "s3:GetReplicationConfiguration",
       "s3:ListBucket",
       "s3:ListBucketVersions",
       "s3:PutBucketTagging",
