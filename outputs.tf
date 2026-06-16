@@ -18,6 +18,16 @@ output "hostname" {
   value       = var.hostname
 }
 
+output "s3_bucket_name" {
+  description = "Name of the S3 bucket provisioned for cake-agents object storage. Null when S3 object storage is disabled."
+  value       = module.cluster.s3_bucket_name
+}
+
+output "s3_bucket_arn" {
+  description = "ARN of the S3 bucket provisioned for cake-agents object storage. Null when S3 object storage is disabled."
+  value       = module.cluster.s3_bucket_arn
+}
+
 output "nameservers" {
   description = "NS records to add to your parent zone for delegation. Null when bringing your own zone. Resolves from a zone-only targeted apply, so you can delegate before the full apply."
   value       = var.zone_id == null ? module.dns[0].nameservers : null

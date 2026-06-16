@@ -36,6 +36,11 @@ module "cluster" {
   database_deletion_protection = var.database_deletion_protection
   database_final_snapshot      = var.database_final_snapshot
 
+  enable_s3_object_storage = var.enable_s3_object_storage
+  s3_bucket_name_prefix    = var.s3_bucket_name_prefix
+  s3_prefix                = var.s3_prefix
+  s3_force_destroy         = var.s3_force_destroy
+
   extra_hosts = var.extra_hosts
 
   oidc  = var.oidc

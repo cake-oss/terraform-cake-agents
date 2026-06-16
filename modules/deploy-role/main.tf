@@ -3,7 +3,7 @@
 # users with BYO VPC or BYO DNS can attach only what they need.
 #
 # Policies (always created):
-# - <name>-required: always needed — EKS, RDS, KMS, IAM, ECR, security
+# - <name>-required: always needed — EKS, RDS, KMS, IAM, ECR, S3, security
 #                    groups, launch templates, CloudWatch logs, SSM AMI
 #                    lookups, ELB read, and Route53 record-level perms for
 #                    the apex alias.
@@ -26,7 +26,7 @@ data "aws_caller_identity" "current" {}
 
 resource "aws_iam_policy" "required" {
   name        = "${var.name}-required"
-  description = "Permissions to apply the terraform-cake-agents root module (cluster + IAM + ECR + Route53 records)"
+  description = "Permissions to apply the terraform-cake-agents root module (cluster + IAM + ECR + S3 + Route53 records)"
   policy      = data.aws_iam_policy_document.required.json
 }
 
@@ -240,6 +240,33 @@ data "aws_iam_policy_document" "required" {
       "iam:UpdateRoleDescription",
     ]
     resources = ["*"]
+  }
+
+  statement {
+    sid       = "S3ListBuckets"
+    actions   = ["s3:ListAllMyBuckets"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "S3ObjectStorage"
+    actions = [
+      "s3:CreateBucket",
+      "s3:DeleteBucket",
+      "s3:DeleteBucketTagging",
+      "s3:DeleteObject",
+      "s3:DeleteObjectVersion",
+      "s3:GetBucketAcl",
+      "s3:GetBucketLocation",
+      "s3:GetBucketTagging",
+      "s3:ListBucket",
+      "s3:ListBucketVersions",
+      "s3:PutBucketTagging",
+    ]
+    resources = [
+      "arn:aws:s3:::*",
+      "arn:aws:s3:::*/*",
+    ]
   }
 
   statement {

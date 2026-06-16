@@ -24,6 +24,7 @@ See **[examples/basic](examples/basic/)** for the full walkthrough (new VPC, new
 | AWS Load Balancer Controller | Provisions the ALB from the cake-agents Ingress |
 | EBS CSI driver | Persistent volumes for cake-agents workloads, encrypted with a per-cluster CMK |
 | RDS Postgres | State store for cake-agents |
+| S3 bucket | Object storage for cake-agents session artifacts |
 | ECR pull-through cache | Mirrors the cake-agents chart and images into the caller's ECR |
 | Route53 hosted zone + wildcard ACM cert | DNS + TLS for the cake-agents hostname (skippable if you already manage these) |
 | cake-agents Helm release | The app, behind `https://<hostname>` |
@@ -101,6 +102,7 @@ See [examples/github-actions](examples/github-actions/). The example provisions 
 | <a name="input_database_multi_az"></a> [database\_multi\_az](#input\_database\_multi\_az) | Provision RDS in multi-AZ mode. | `bool` | `false` | no |
 | <a name="input_deploy_role_name"></a> [deploy\_role\_name](#input\_deploy\_role\_name) | IAM role granted KMS admin on the per-cluster keys. Leave null when applying with admin credentials. | `string` | `null` | no |
 | <a name="input_enable_ecr_pull_through"></a> [enable\_ecr\_pull\_through](#input\_enable\_ecr\_pull\_through) | Set up an ECR pull-through cache for the cake-agents chart. Recommended. | `bool` | `true` | no |
+| <a name="input_enable_s3_object_storage"></a> [enable\_s3\_object\_storage](#input\_enable\_s3\_object\_storage) | Provision S3 object storage for cake-agents and configure the Helm chart to use it. | `bool` | `true` | no |
 | <a name="input_extra_hosts"></a> [extra\_hosts](#input\_extra\_hosts) | Additional entries appended to the cake-agents controlPlane.extraHosts. The OIDC issuer host is added automatically. | `list(string)` | `[]` | no |
 | <a name="input_hostname"></a> [hostname](#input\_hostname) | Apex hostname the cake-agents UI/API is served from (e.g. agents.example.com). | `string` | n/a | yes |
 | <a name="input_kubernetes_version"></a> [kubernetes\_version](#input\_kubernetes\_version) | EKS Kubernetes minor version. | `string` | `"1.35"` | no |
@@ -110,6 +112,9 @@ See [examples/github-actions](examples/github-actions/). The example provisions 
 | <a name="input_private_subnet_ids"></a> [private\_subnet\_ids](#input\_private\_subnet\_ids) | Private subnet IDs for bring-your-own VPC. Auto-tagged for Karpenter discovery. | `list(string)` | `[]` | no |
 | <a name="input_public_subnet_ids"></a> [public\_subnet\_ids](#input\_public\_subnet\_ids) | Public subnet IDs for bring-your-own VPC. Auto-tagged for ALB discovery. | `list(string)` | `[]` | no |
 | <a name="input_registry"></a> [registry](#input\_registry) | OCI registry to pull the chart from. Only required when enable\_ecr\_pull\_through is false. | `string` | `null` | no |
+| <a name="input_s3_bucket_name_prefix"></a> [s3\_bucket\_name\_prefix](#input\_s3\_bucket\_name\_prefix) | Prefix for the generated S3 bucket name used by cake-agents object storage. When null, a prefix is generated from name. | `string` | `null` | no |
+| <a name="input_s3_force_destroy"></a> [s3\_force\_destroy](#input\_s3\_force\_destroy) | Whether to force-destroy the cake-agents S3 bucket even when it contains objects. | `bool` | `false` | no |
+| <a name="input_s3_prefix"></a> [s3\_prefix](#input\_s3\_prefix) | Prefix inside the S3 bucket used by cake-agents. | `string` | `"sessions"` | no |
 | <a name="input_slack"></a> [slack](#input\_slack) | Optional Slack credentials for the cake-agents Helm chart. | <pre>object({<br/>    signing_secret = string<br/>    bot_token      = string<br/>  })</pre> | `null` | no |
 | <a name="input_vpc_cidr"></a> [vpc\_cidr](#input\_vpc\_cidr) | CIDR block for a new VPC. Mutually exclusive with vpc\_id. | `string` | `null` | no |
 | <a name="input_vpc_id"></a> [vpc\_id](#input\_vpc\_id) | Existing VPC ID. When set, also provide private\_subnet\_ids and public\_subnet\_ids. Mutually exclusive with vpc\_cidr. | `string` | `null` | no |
@@ -125,5 +130,7 @@ See [examples/github-actions](examples/github-actions/). The example provisions 
 | <a name="output_hostname"></a> [hostname](#output\_hostname) | Apex hostname for cake-agents. |
 | <a name="output_nameservers"></a> [nameservers](#output\_nameservers) | NS records to add to your parent zone for delegation. Null when bringing your own zone. Resolves from a zone-only targeted apply, so you can delegate before the full apply. |
 | <a name="output_nameservers_bind"></a> [nameservers\_bind](#output\_nameservers\_bind) | NS records in BIND zone-file format, ready to paste into the parent zone. Null when bringing your own zone. |
+| <a name="output_s3_bucket_arn"></a> [s3\_bucket\_arn](#output\_s3\_bucket\_arn) | ARN of the S3 bucket provisioned for cake-agents object storage. Null when S3 object storage is disabled. |
+| <a name="output_s3_bucket_name"></a> [s3\_bucket\_name](#output\_s3\_bucket\_name) | Name of the S3 bucket provisioned for cake-agents object storage. Null when S3 object storage is disabled. |
 | <a name="output_vpc_id"></a> [vpc\_id](#output\_vpc\_id) | ID of the VPC the cluster runs in. |
 <!-- END_TF_DOCS -->
