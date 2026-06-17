@@ -9,6 +9,10 @@
       let
         pkgs = import nixpkgs {
           inherit system;
+          config = {
+            # Terraform uses the Business Source License 1.1, which is not free; permit it.
+            allowlistedLicenses = [ nixpkgs.lib.licenses.bsl11 ];
+          };
         };
       in
       {
@@ -16,13 +20,9 @@
           packages = with pkgs; [
             awscli2
             kubectl
-            opentofu
+            terraform
             terraform-docs
           ];
-
-          shellHook = ''
-            alias terraform=tofu
-          '';
         };
       });
 }
