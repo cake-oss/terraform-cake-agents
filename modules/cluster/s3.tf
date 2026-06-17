@@ -14,6 +14,13 @@ resource "aws_s3_bucket" "cake_agents" {
   bucket_prefix    = local.s3_bucket_name_prefix
   bucket_namespace = "account-regional"
   force_destroy    = var.s3_force_destroy
+
+  lifecycle {
+    precondition {
+      condition     = length(local.s3_bucket_name_prefix) <= local.s3_bucket_name_prefix_max_length
+      error_message = "s3_bucket_name_prefix must be ${local.s3_bucket_name_prefix_max_length} characters or fewer in ${data.aws_region.current.region} when using bucket_namespace = \"account-regional\"."
+    }
+  }
 }
 
 resource "aws_iam_role" "cake_agents_s3" {

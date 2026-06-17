@@ -116,7 +116,7 @@ variable "enable_s3_object_storage" {
 
 variable "s3_bucket_name_prefix" {
   type        = string
-  description = "Prefix for the generated S3 bucket name used by cake-agents object storage. When null, a prefix is generated from name. With account-regional bucket namespace, the maximum length is 22 minus the AWS region name length."
+  description = "Prefix for the generated S3 bucket name used by cake-agents object storage. When null, a prefix is generated from name and truncated as needed. With account-regional bucket namespace, the maximum length is 22 minus the AWS region name length."
   default     = null
 }
 
