@@ -1,4 +1,4 @@
-data "aws_iam_policy_document" "cake_agents_s3_pod_identity_assume" {
+data "aws_iam_policy_document" "cake_agents_pod_identity_assume" {
   statement {
     actions = ["sts:AssumeRole", "sts:TagSession"]
     principals {
@@ -23,11 +23,11 @@ resource "aws_s3_bucket" "cake_agents" {
   }
 }
 
-resource "aws_iam_role" "cake_agents_s3" {
+resource "aws_iam_role" "cake_agents" {
   count = var.enable_s3_object_storage ? 1 : 0
 
-  name               = "${var.name}-cake-agents-s3"
-  assume_role_policy = data.aws_iam_policy_document.cake_agents_s3_pod_identity_assume.json
+  name               = "${var.name}-cake-agents"
+  assume_role_policy = data.aws_iam_policy_document.cake_agents_pod_identity_assume.json
 }
 
 data "aws_iam_policy_document" "cake_agents_s3" {
@@ -58,15 +58,15 @@ resource "aws_iam_role_policy" "cake_agents_s3" {
   count = var.enable_s3_object_storage ? 1 : 0
 
   name   = "s3-object-storage"
-  role   = aws_iam_role.cake_agents_s3[0].id
+  role   = aws_iam_role.cake_agents[0].id
   policy = data.aws_iam_policy_document.cake_agents_s3[0].json
 }
 
-resource "aws_eks_pod_identity_association" "cake_agents_s3" {
+resource "aws_eks_pod_identity_association" "cake_agents" {
   count = var.enable_s3_object_storage ? 1 : 0
 
   cluster_name    = module.eks.cluster_name
   namespace       = kubernetes_namespace_v1.cake_agents.metadata[0].name
   service_account = "cake-agents"
-  role_arn        = aws_iam_role.cake_agents_s3[0].arn
+  role_arn        = aws_iam_role.cake_agents[0].arn
 }

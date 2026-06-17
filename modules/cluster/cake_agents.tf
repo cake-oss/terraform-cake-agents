@@ -127,7 +127,7 @@ resource "helm_release" "cake_agents" {
     kubernetes_secret_v1.cake_agents_db_creds,
     kubernetes_secret_v1.cake_agents_slack_creds,
     kubernetes_secret_v1.cake_agents_oidc_creds,
-    aws_eks_pod_identity_association.cake_agents_s3,
+    aws_eks_pod_identity_association.cake_agents,
     null_resource.warmup_chart,
   ]
 }
