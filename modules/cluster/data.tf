@@ -32,9 +32,10 @@ locals {
   # (409 ResourceInUseException), so skip it in that case.
   caller_is_sso_admin = local.caller_role_name != "" && local.caller_role_name == local.sso_admin_role_name
 
-  pull_through_chart    = "${var.cake_agents_chart_repository_prefix}/charts/cake-agents"
-  chart_registry        = var.enable_ecr_pull_through ? "oci://${local.registry_host}/${var.cake_agents_chart_repository_prefix}/charts" : var.registry
-  s3_bucket_name_prefix = coalesce(var.s3_bucket_name_prefix, "${var.name}-cake-agents-")
+  pull_through_chart               = "${var.cake_agents_chart_repository_prefix}/charts/cake-agents"
+  chart_registry                   = var.enable_ecr_pull_through ? "oci://${local.registry_host}/${var.cake_agents_chart_repository_prefix}/charts" : var.registry
+  s3_bucket_name_prefix            = coalesce(var.s3_bucket_name_prefix, "${var.name}-cake-agents-")
+  s3_bucket_name_prefix_max_length = 22 - length(data.aws_region.current.region)
   kms_admin_principals = compact([
     "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root",
     var.deploy_role_name == null ? "" : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.deploy_role_name}",
