@@ -11,8 +11,16 @@ data "aws_iam_policy_document" "cake_agents_s3_pod_identity_assume" {
 resource "aws_s3_bucket" "cake_agents" {
   count = var.enable_s3_object_storage ? 1 : 0
 
-  bucket_prefix = local.s3_bucket_name_prefix
-  force_destroy = var.s3_force_destroy
+  bucket_prefix    = local.s3_bucket_name_prefix
+  bucket_namespace = "account-regional"
+  force_destroy    = var.s3_force_destroy
+
+  lifecycle {
+    precondition {
+      condition     = length(local.s3_bucket_name_prefix) <= local.s3_bucket_name_prefix_max_length
+      error_message = "s3_bucket_name_prefix must be ${local.s3_bucket_name_prefix_max_length} characters or fewer in ${data.aws_region.current.region} when using bucket_namespace = \"account-regional\"."
+    }
+  }
 }
 
 resource "aws_iam_role" "cake_agents_s3" {
