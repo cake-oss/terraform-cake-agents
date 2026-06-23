@@ -259,6 +259,14 @@ resource "helm_release" "aws_load_balancer_controller" {
   depends_on = [
     helm_release.karpenter,
     aws_eks_pod_identity_association.lbc,
+    # Keep the LBC's IAM permissions alive until the controller itself is gone.
+    # On destroy, the ingress is removed before this release, and the LBC must
+    # call elasticloadbalancing:DeleteLoadBalancer to clear its finalizer and
+    # delete the ALB. Without these edges Terraform detaches the policy in
+    # parallel with the ingress deletion, the finalizer stalls, and the orphaned
+    # ALB's ENIs block VPC subnet/IGW destruction.
+    aws_iam_policy.lbc,
+    aws_iam_role_policy_attachment.lbc,
     # Keep system nodes alive until LBC is gone; otherwise ingress finalizers
     # can stall because the controller pod cannot run during destroy.
     module.eks.eks_managed_node_groups,
