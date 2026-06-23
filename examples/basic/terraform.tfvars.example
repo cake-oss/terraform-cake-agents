@@ -1,13 +1,13 @@
 name      = "prod"
-hostname  = "agents.example.com"
 region    = "us-east-2"
+install_key = "get_me_from_cake"
 
 # CIDR block for the new VPC. The default below is fine for a standalone VPC.
 # Change it if you intend to peer this VPC with another one that uses a
 # conflicting range (peered VPCs cannot have overlapping CIDRs).
 vpc_cidr = "10.0.0.0/16"
 
-cake_agents_chart_version = "0.10.1"
+cake_agents_chart_version = "0.11.0"
 
 # An arbitrary string used to identify the provider in Cake Agents. In the
 # future, we will support multiple SSO providers, and this ID will be used to

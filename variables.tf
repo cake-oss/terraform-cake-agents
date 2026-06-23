@@ -5,12 +5,43 @@ variable "name" {
 
 variable "hostname" {
   type        = string
-  description = "Apex hostname the cake-agents UI/API is served from (e.g. agents.example.com)."
+  description = "Apex hostname the cake-agents UI/API is served from (e.g. agents.example.com). Optional when install_key is set, in which case hostname is discovered from Cake Console."
+  default     = null
+
+  validation {
+    condition     = var.install_key != null || var.hostname != null
+    error_message = "Set hostname when install_key is null. When install_key is set, hostname is looked up automatically."
+  }
+}
+
+variable "install_key" {
+  type        = string
+  description = "Install key for Cake-hosted DNS automation. Required when zone_id/certificate_arn are unset."
+  default     = null
+  sensitive   = true
+}
+
+variable "cake_console_url" {
+  type        = string
+  description = "Cake Console base URL used for install validation-record provisioning."
+  default     = "https://console.cake.ai"
+}
+
+variable "password_auth_enabled" {
+  type        = bool
+  description = "Set to true to enable email/password authentication in addition to OIDC. This allows users to log in with an email and password (managed by Cake) instead of an OIDC token."
+  default     = true
 }
 
 variable "cake_agents_chart_version" {
   type        = string
   description = "Version of the cake-agents Helm chart to deploy."
+}
+
+variable "cake_agents_chart_upstream_registry" {
+  type        = string
+  description = "Upstream ECR registry hosting the cake-agents Helm chart. Used to authenticate Helm when pulling the chart directly."
+  default     = "684117700585.dkr.ecr.us-east-2.amazonaws.com"
 }
 
 # --- DNS: bring-your-own or let the module create it ---
@@ -23,12 +54,20 @@ variable "zone_id" {
 
 variable "certificate_arn" {
   type        = string
-  description = "Existing validated ACM certificate ARN covering hostname. Required when zone_id is set; created automatically when zone_id is null."
+  description = "Existing validated ACM certificate ARN covering hostname. Required with zone_id for bring-your-own DNS; otherwise created and validated automatically via Cake-hosted DNS."
   default     = null
 
   validation {
-    condition     = (var.zone_id == null && var.certificate_arn == null) || (var.zone_id != null && var.certificate_arn != null)
-    error_message = "Provide both zone_id and certificate_arn for bring-your-own DNS, or neither to let the module create both."
+    condition = (
+      var.zone_id != null &&
+      var.certificate_arn != null &&
+      var.install_key == null
+      ) || (
+      var.zone_id == null &&
+      var.certificate_arn == null &&
+      var.install_key != null
+    )
+    error_message = "Provide either: (1) zone_id + certificate_arn and omit install_key (bring-your-own DNS), or (2) install_key and omit zone_id/certificate_arn (Cake-hosted DNS)."
   }
 }
 
@@ -146,6 +185,7 @@ variable "oidc" {
     client_id     = string
     public_client = bool
     client_secret = optional(string)
+    scopes        = optional(list(string))
   })
   description = "Optional OIDC configuration for the cake-agents Helm chart."
   default     = null

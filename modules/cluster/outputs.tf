@@ -14,6 +14,11 @@ output "cluster_certificate_authority_data" {
   sensitive   = true
 }
 
+output "alb_hostname" {
+  description = "ALB hostname for the cluster. Used as the target for DNS records pointing to cake-agents."
+  value       = kubernetes_ingress_v1.cake_agents.status[0].load_balancer[0].ingress[0].hostname
+}
+
 output "vpc_id" {
   description = "ID of the VPC the cluster runs in (either the one created by this module or var.vpc_id)."
   value       = local.vpc_id

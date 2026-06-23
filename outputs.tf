@@ -8,6 +8,11 @@ output "cluster_endpoint" {
   value       = module.cluster.cluster_endpoint
 }
 
+output "cluster_certificate_authority_data" {
+  description = "Base64-encoded certificate authority data for the EKS cluster."
+  value       = module.cluster.cluster_certificate_authority_data
+}
+
 output "vpc_id" {
   description = "ID of the VPC the cluster runs in."
   value       = module.cluster.vpc_id
@@ -15,7 +20,7 @@ output "vpc_id" {
 
 output "hostname" {
   description = "Apex hostname for cake-agents."
-  value       = var.hostname
+  value       = local.hostname
 }
 
 output "s3_bucket_name" {
@@ -29,16 +34,22 @@ output "s3_bucket_arn" {
 }
 
 output "nameservers" {
-  description = "NS records to add to your parent zone for delegation. Null when bringing your own zone. Resolves from a zone-only targeted apply, so you can delegate before the full apply."
-  value       = var.zone_id == null ? module.dns[0].nameservers : null
+  description = "Deprecated: nameserver delegation output from the legacy module-managed DNS flow. Always null in the install_key and bring-your-own DNS flows."
+  value       = null
 }
 
 output "nameservers_bind" {
-  description = "NS records in BIND zone-file format, ready to paste into the parent zone. Null when bringing your own zone."
-  value       = var.zone_id == null ? module.dns[0].nameservers_bind : null
+  description = "Deprecated: nameserver delegation output from the legacy module-managed DNS flow. Always null in the install_key and bring-your-own DNS flows."
+  value       = null
 }
 
 output "acm_validation_records" {
-  description = "ACM validation CNAMEs (informational — already created in the managed zone). Null when bringing your own zone."
-  value       = var.zone_id == null ? module.dns[0].acm_validation_records : null
+  description = "ACM validation CNAMEs for the install_key flow (informational). Null when bringing your own DNS with certificate_arn."
+  value = var.install_key == null ? null : nonsensitive([
+    for dvo in aws_acm_certificate.cake_hosted[0].domain_validation_options : {
+      name  = dvo.resource_record_name
+      type  = dvo.resource_record_type
+      value = dvo.resource_record_value
+    }
+  ])
 }

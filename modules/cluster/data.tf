@@ -36,6 +36,14 @@ locals {
   chart_registry                   = var.enable_ecr_pull_through ? "oci://${local.registry_host}/${var.cake_agents_chart_repository_prefix}/charts" : var.registry
   s3_bucket_name_prefix_max_length = 20 - length(data.aws_region.current.region)
   s3_bucket_name_prefix            = coalesce(var.s3_bucket_name_prefix, substr("${var.name}-cake-agents-", 0, local.s3_bucket_name_prefix_max_length))
+
+  pull_through_chart = "${var.cake_agents_chart_repository_prefix}/charts/cake-agents"
+  # Helm pulls the chart directly from the upstream Cake registry, bypassing the
+  # pull-through cache so no warmup is required.
+  chart_registry = var.enable_ecr_pull_through ? "oci://${var.cake_agents_chart_upstream_registry}/charts" : var.registry
+  # Container images are still pulled through the customer's ECR pull-through
+  # cache by EKS nodes at runtime.
+  image_registry = var.enable_ecr_pull_through ? "${local.registry_host}/${var.cake_agents_chart_repository_prefix}" : trimsuffix(trimprefix(var.registry, "oci://"), "/charts")
   kms_admin_principals = compact([
     "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root",
     var.deploy_role_name == null ? "" : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.deploy_role_name}",

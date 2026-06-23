@@ -15,7 +15,8 @@ variable "certificate_arn" {
 
 variable "route53_zone_id" {
   type        = string
-  description = "ID of the Route53 hosted zone for hostname. An alias A record at the apex is created pointing to the cake-agents ALB."
+  description = "ID of the Route53 hosted zone for hostname. When set, an alias A record at the apex is created pointing to the cake-agents ALB."
+  default     = null
 }
 
 variable "vpc_cidr" {
@@ -157,6 +158,12 @@ variable "extra_hosts" {
   default     = []
 }
 
+variable "password_auth_enabled" {
+  type        = bool
+  description = "Set to true to enable email/password authentication in addition to OIDC. This allows users to log in with an email and password (managed by Cake) instead of an OIDC token."
+  default     = true
+}
+
 variable "oidc" {
   type = object({
     provider_id   = string
@@ -165,6 +172,7 @@ variable "oidc" {
     client_id     = string
     public_client = bool
     client_secret = optional(string)
+    scopes        = optional(list(string))
   })
   description = "Optional OIDC configuration for the cake-agents Helm chart. When null, no OIDC block is passed."
   default     = null

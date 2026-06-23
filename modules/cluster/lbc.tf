@@ -259,5 +259,8 @@ resource "helm_release" "aws_load_balancer_controller" {
   depends_on = [
     helm_release.karpenter,
     aws_eks_pod_identity_association.lbc,
+    # Keep system nodes alive until LBC is gone; otherwise ingress finalizers
+    # can stall because the controller pod cannot run during destroy.
+    module.eks.eks_managed_node_groups,
   ]
 }

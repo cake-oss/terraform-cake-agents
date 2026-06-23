@@ -16,6 +16,8 @@ module "karpenter" {
   node_iam_role_additional_policies = var.enable_ecr_pull_through ? {
     ecr_pull_through = aws_iam_policy.node_ecr_pull_through[0].arn
   } : {}
+
+  depends_on = [module.eks]
 }
 
 resource "helm_release" "karpenter" {
@@ -44,7 +46,7 @@ resource "helm_release" "karpenter" {
     }
   })]
 
-  depends_on = [module.eks.eks_managed_node_groups]
+  depends_on = [module.karpenter, module.eks.eks_managed_node_groups]
 }
 
 resource "kubectl_manifest" "karpenter_ec2nodeclass" {
@@ -70,7 +72,10 @@ resource "kubectl_manifest" "karpenter_ec2nodeclass" {
     }
   })
 
-  depends_on = [helm_release.karpenter]
+  depends_on = [
+    helm_release.karpenter,
+    module.karpenter,
+  ]
 }
 
 resource "kubectl_manifest" "karpenter_nodepool" {
@@ -106,5 +111,8 @@ resource "kubectl_manifest" "karpenter_nodepool" {
     }
   })
 
-  depends_on = [kubectl_manifest.karpenter_ec2nodeclass]
+  depends_on = [
+    kubectl_manifest.karpenter_ec2nodeclass,
+    module.karpenter,
+  ]
 }

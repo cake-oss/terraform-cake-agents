@@ -26,5 +26,9 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.0"
     }
+    restful = {
+      source  = "magodo/restful"
+      version = ">= 0.25.0"
+    }
   }
 }

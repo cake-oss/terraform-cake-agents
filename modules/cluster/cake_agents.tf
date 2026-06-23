@@ -1,7 +1,20 @@
+# EKS access policy associations complete at the AWS API level before the
+# Kubernetes API server reflects them. A short sleep lets auth propagate so
+# subsequent kubectl calls don't get "forbidden" errors.
+resource "time_sleep" "eks_auth_propagation" {
+  create_duration = "15s"
+
+  triggers = {
+    access_entries = jsonencode(module.eks.access_entries)
+  }
+}
+
 resource "kubernetes_namespace_v1" "cake_agents" {
   metadata {
     name = "cake-agents"
   }
+
+  depends_on = [time_sleep.eks_auth_propagation]
 }
 
 resource "random_password" "cake_agents_db" {
@@ -65,20 +78,27 @@ resource "helm_release" "cake_agents" {
   values = [yamlencode(merge(
     {
       registry = {
-        # Same registry as the chart, minus the /charts subpath, so image refs
-        # inside the chart resolve through the same pull-through cache.
-        default = trimsuffix(trimprefix(local.chart_registry, "oci://"), "/charts")
+        default = local.image_registry
       }
       image = {
         tag = var.cake_agents_chart_version
       }
-      controlPlane = {
+      controlPlane = merge({
         host = var.hostname
         extraHosts = concat(
           var.oidc == null ? [] : [regex("^https?://([^/:]+)", var.oidc.issuer)[0]],
           var.extra_hosts,
         )
-      }
+        }, var.password_auth_enabled ? {
+        deployment = {
+          extraEnv = [
+            {
+              name  = "CAKE_EMAIL_AND_PASSWORD_ENABLED"
+              value = "true"
+            }
+          ]
+        }
+      } : {})
       pathPrefix = "/"
       postgresql = {
         enabled = false
@@ -105,19 +125,22 @@ resource "helm_release" "cake_agents" {
       }
     },
     var.oidc == null ? {} : {
-      oidc = {
-        enabled      = true
-        providerId   = var.oidc.provider_id
-        domain       = var.oidc.domain
-        issuer       = var.oidc.issuer
-        clientId     = var.oidc.client_id
-        publicClient = var.oidc.public_client
-        clientSecret = {
-          create = false
-          name   = var.oidc.public_client ? null : kubernetes_secret_v1.cake_agents_oidc_creds[0].metadata[0].name
-          key    = var.oidc.public_client ? null : "clientSecret"
-        }
-      }
+      oidc = merge(
+        {
+          enabled      = true
+          providerId   = var.oidc.provider_id
+          domain       = var.oidc.domain
+          issuer       = var.oidc.issuer
+          clientId     = var.oidc.client_id
+          publicClient = var.oidc.public_client
+          clientSecret = {
+            create = false
+            name   = var.oidc.public_client ? null : kubernetes_secret_v1.cake_agents_oidc_creds[0].metadata[0].name
+            key    = var.oidc.public_client ? null : "clientSecret"
+          }
+        },
+        var.oidc.scopes == null ? {} : { scopes = var.oidc.scopes },
+      )
     },
   ))]
 
@@ -128,7 +151,6 @@ resource "helm_release" "cake_agents" {
     kubernetes_secret_v1.cake_agents_slack_creds,
     kubernetes_secret_v1.cake_agents_oidc_creds,
     aws_eks_pod_identity_association.cake_agents,
-    null_resource.warmup_chart,
   ]
 }
 
@@ -191,6 +213,8 @@ data "aws_lb" "cake_agents" {
 }
 
 resource "aws_route53_record" "cake_agents_apex" {
+  count = var.route53_zone_id == null ? 0 : 1
+
   zone_id = var.route53_zone_id
   name    = var.hostname
   type    = "A"

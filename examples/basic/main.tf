@@ -6,6 +6,31 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 6.0"
     }
+
+    helm = {
+      source  = "hashicorp/helm"
+      version = ">= 3.0.0"
+    }
+    kubectl = {
+      source  = "alekc/kubectl"
+      version = ">= 2.1.0"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = ">= 2.0.0"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
+    restful = {
+      source  = "magodo/restful"
+      version = ">= 0.25.0"
+    }
   }
 }
 
@@ -16,22 +41,20 @@ provider "aws" {
 module "cake_agents" {
   source = "../../"
 
-  name     = var.name
-  hostname = var.hostname
-  vpc_cidr = var.vpc_cidr
+  name        = var.name
+  install_key = var.install_key
+  vpc_cidr    = var.vpc_cidr
 
   extra_hosts = var.extra_hosts
 
-  oidc = {
-    provider_id   = var.oidc_provider_id
-    domain        = var.oidc_domain
-    issuer        = var.oidc_issuer
-    client_id     = var.oidc_client_id
-    client_secret = var.oidc_client_secret
-    public_client = var.oidc_public_client
-  }
+  password_auth_enabled = var.password_auth_enabled
 
-  cake_agents_chart_version = var.cake_agents_chart_version
+  oidc = var.oidc
+
+  cake_console_url = var.cake_console_url
+
+  cake_agents_chart_version           = var.cake_agents_chart_version
+  cake_agents_chart_upstream_registry = var.cake_agents_chart_upstream_registry
 }
 
 output "nameservers" {
@@ -47,8 +70,13 @@ output "nameservers_bind" {
 output "acm_validation_records" {
   description = "ACM validation CNAMEs (informational — already created in the managed zone)."
   value       = module.cake_agents.acm_validation_records
+  sensitive   = true
 }
 
 output "cluster_name" {
   value = module.cake_agents.cluster_name
+}
+
+output "cake_agents_url" {
+  value = "https://${module.cake_agents.hostname}"
 }

@@ -3,11 +3,6 @@ variable "name" {
   description = "Cluster name (e.g. \"prod\")."
 }
 
-variable "hostname" {
-  type        = string
-  description = "Apex hostname (e.g. \"agents.example.com\")."
-}
-
 variable "region" {
   type        = string
   description = "AWS region to deploy into."
@@ -24,40 +19,47 @@ variable "cake_agents_chart_version" {
   description = "cake-agents chart version. Get the latest from Cake."
 }
 
+variable "cake_agents_chart_upstream_registry" {
+  type        = string
+  description = "Upstream ECR registry hosting the cake-agents Helm chart."
+  default     = "684117700585.dkr.ecr.us-east-2.amazonaws.com"
+}
+
+variable "install_key" {
+  type        = string
+  description = "Install key for Cake-hosted DNS automation."
+  sensitive   = true
+}
+
 variable "extra_hosts" {
   type        = list(string)
   description = "Additional entries appended to the cake-agents controlPlane.extraHosts. The OIDC issuer host is added automatically."
   default     = []
 }
 
-variable "oidc_provider_id" {
-  type        = string
-  description = "OIDC provider ID used to identify the provider in Cake Agents (e.g. \"google\")."
-}
-
-variable "oidc_domain" {
-  type        = string
-  description = "Restrict logins to email addresses from this domain (e.g. your company SSO domain)."
-}
-
-variable "oidc_issuer" {
-  type        = string
-  description = "OIDC issuer URL. Must expose a well-known OpenID configuration endpoint."
-}
-
-variable "oidc_client_id" {
-  type        = string
-  description = "OIDC client ID Cake Agents expects in the token."
-}
-
-variable "oidc_client_secret" {
-  type        = string
-  description = "Client secret for the OIDC provider. Required if `oidc` is set in the module config."
-  sensitive   = true
-}
-
-variable "oidc_public_client" {
+variable "password_auth_enabled" {
   type        = bool
-  description = "Set to true if your OIDC provider does not require a client secret (leave oidc_client_secret blank in that case)."
-  default     = false
+  description = "Set to true to enable email/password authentication in addition to OIDC. This allows users to log in with an email and password (managed by Cake) instead of an OIDC token."
+  default     = true
+}
+
+variable "cake_console_url" {
+  type        = string
+  description = "Cake Console base URL used for install validation-record provisioning."
+  default     = "https://console.cake.ai"
+}
+
+variable "oidc" {
+  type = object({
+    provider_id   = string
+    domain        = string
+    issuer        = string
+    client_id     = string
+    public_client = bool
+    client_secret = optional(string)
+    scopes        = optional(list(string))
+  })
+  description = "Optional OIDC configuration for the cake-agents Helm chart. When null, no OIDC block is passed."
+  default     = null
+  sensitive   = true
 }

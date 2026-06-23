@@ -34,6 +34,7 @@ This requires `helm` and `aws` CLIs on the machine running `terraform apply`. Se
 | <a name="requirement_kubernetes"></a> [kubernetes](#requirement\_kubernetes) | >= 2.0.0 |
 | <a name="requirement_null"></a> [null](#requirement\_null) | ~> 3.0 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | ~> 3.0 |
+| <a name="requirement_time"></a> [time](#requirement\_time) | ~> 0.9 |
 
 ## Providers
 
@@ -43,8 +44,8 @@ This requires `helm` and `aws` CLIs on the machine running `terraform apply`. Se
 | <a name="provider_helm"></a> [helm](#provider\_helm) | >= 3.0.0 |
 | <a name="provider_kubectl"></a> [kubectl](#provider\_kubectl) | >= 2.1.0 |
 | <a name="provider_kubernetes"></a> [kubernetes](#provider\_kubernetes) | >= 2.0.0 |
-| <a name="provider_null"></a> [null](#provider\_null) | ~> 3.0 |
 | <a name="provider_random"></a> [random](#provider\_random) | ~> 3.0 |
+| <a name="provider_time"></a> [time](#provider\_time) | ~> 0.9 |
 
 ## Modules
 
@@ -95,8 +96,8 @@ This requires `helm` and `aws` CLIs on the machine running `terraform apply`. Se
 | [kubernetes_secret_v1.cake_agents_db_creds](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/secret_v1) | resource |
 | [kubernetes_secret_v1.cake_agents_oidc_creds](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/secret_v1) | resource |
 | [kubernetes_secret_v1.cake_agents_slack_creds](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/secret_v1) | resource |
-| [null_resource.warmup_chart](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [random_password.cake_agents_db](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
+| [time_sleep.eks_auth_propagation](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) | resource |
 | [aws_availability_zones.available](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/availability_zones) | data source |
 | [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
 | [aws_iam_policy_document.cake_agents_pod_identity_assume](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
@@ -127,11 +128,12 @@ This requires `helm` and `aws` CLIs on the machine running `terraform apply`. Se
 | <a name="input_kubernetes_version"></a> [kubernetes\_version](#input\_kubernetes\_version) | EKS Kubernetes minor version. | `string` | `"1.35"` | no |
 | <a name="input_name"></a> [name](#input\_name) | Cluster name. Used for the EKS cluster, VPC (when created), and the karpenter.sh/discovery tag value. | `string` | n/a | yes |
 | <a name="input_nat_gateway_per_az"></a> [nat\_gateway\_per\_az](#input\_nat\_gateway\_per\_az) | When creating a VPC: one NAT gateway per AZ (true) or a single shared NAT (false, cheaper). Ignored when bringing your own VPC. | `bool` | `false` | no |
-| <a name="input_oidc"></a> [oidc](#input\_oidc) | Optional OIDC configuration for the cake-agents Helm chart. When null, no OIDC block is passed. | <pre>object({<br/>    provider_id   = string<br/>    domain        = string<br/>    issuer        = string<br/>    client_id     = string<br/>    public_client = bool<br/>    client_secret = optional(string)<br/>  })</pre> | `null` | no |
+| <a name="input_oidc"></a> [oidc](#input\_oidc) | Optional OIDC configuration for the cake-agents Helm chart. When null, no OIDC block is passed. | <pre>object({<br/>    provider_id   = string<br/>    domain        = string<br/>    issuer        = string<br/>    client_id     = string<br/>    public_client = bool<br/>    client_secret = optional(string)<br/>    scopes        = optional(list(string))<br/>  })</pre> | `null` | no |
+| <a name="input_password_auth_enabled"></a> [password\_auth\_enabled](#input\_password\_auth\_enabled) | Set to true to enable email/password authentication in addition to OIDC. This allows users to log in with an email and password (managed by Cake) instead of an OIDC token. | `bool` | `true` | no |
 | <a name="input_private_subnet_ids"></a> [private\_subnet\_ids](#input\_private\_subnet\_ids) | Private subnet IDs when bringing your own VPC. Must span at least 2 AZs. Subnets are auto-tagged for Karpenter and internal-elb discovery. | `list(string)` | `[]` | no |
 | <a name="input_public_subnet_ids"></a> [public\_subnet\_ids](#input\_public\_subnet\_ids) | Public subnet IDs when bringing your own VPC. Auto-tagged for external-elb discovery. | `list(string)` | `[]` | no |
 | <a name="input_registry"></a> [registry](#input\_registry) | OCI registry hosting the cake-agents chart (e.g. oci://my-mirror.example.com/charts). Only required when enable\_ecr\_pull\_through is false. | `string` | `null` | no |
-| <a name="input_route53_zone_id"></a> [route53\_zone\_id](#input\_route53\_zone\_id) | ID of the Route53 hosted zone for hostname. An alias A record at the apex is created pointing to the cake-agents ALB. | `string` | n/a | yes |
+| <a name="input_route53_zone_id"></a> [route53\_zone\_id](#input\_route53\_zone\_id) | ID of the Route53 hosted zone for hostname. When set, an alias A record at the apex is created pointing to the cake-agents ALB. | `string` | `null` | no |
 | <a name="input_s3_bucket_name_prefix"></a> [s3\_bucket\_name\_prefix](#input\_s3\_bucket\_name\_prefix) | Prefix for the generated S3 bucket name used by cake-agents object storage. When null, a prefix is generated from name and truncated as needed. With account-regional bucket namespace, the maximum length is 22 minus the AWS region name length. | `string` | `null` | no |
 | <a name="input_s3_force_destroy"></a> [s3\_force\_destroy](#input\_s3\_force\_destroy) | Whether to force-destroy the cake-agents S3 bucket even when it contains objects. | `bool` | `false` | no |
 | <a name="input_s3_prefix"></a> [s3\_prefix](#input\_s3\_prefix) | Prefix inside the S3 bucket used by cake-agents. | `string` | `"sessions"` | no |
@@ -143,6 +145,7 @@ This requires `helm` and `aws` CLIs on the machine running `terraform apply`. Se
 
 | Name | Description |
 | ---- | ----------- |
+| <a name="output_alb_hostname"></a> [alb\_hostname](#output\_alb\_hostname) | ALB hostname for the cluster. Used as the target for DNS records pointing to cake-agents. |
 | <a name="output_cluster_certificate_authority_data"></a> [cluster\_certificate\_authority\_data](#output\_cluster\_certificate\_authority\_data) | Base64-encoded cluster CA certificate. |
 | <a name="output_cluster_endpoint"></a> [cluster\_endpoint](#output\_cluster\_endpoint) | EKS cluster API endpoint. |
 | <a name="output_cluster_name"></a> [cluster\_name](#output\_cluster\_name) | EKS cluster name. |
