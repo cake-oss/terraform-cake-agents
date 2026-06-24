@@ -34,7 +34,7 @@ locals {
 
   pull_through_chart               = "${var.cake_agents_chart_repository_prefix}/charts/cake-agents"
   chart_registry                   = var.enable_ecr_pull_through ? "oci://${local.registry_host}/${var.cake_agents_chart_repository_prefix}/charts" : var.registry
-  s3_bucket_name_prefix_max_length = 22 - length(data.aws_region.current.region)
+  s3_bucket_name_prefix_max_length = 20 - length(data.aws_region.current.region)
   s3_bucket_name_prefix            = coalesce(var.s3_bucket_name_prefix, substr("${var.name}-cake-agents-", 0, local.s3_bucket_name_prefix_max_length))
   kms_admin_principals = compact([
     "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root",
