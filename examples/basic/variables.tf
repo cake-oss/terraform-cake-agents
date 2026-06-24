@@ -19,6 +19,12 @@ variable "cake_agents_chart_version" {
   description = "cake-agents chart version. Get the latest from Cake."
 }
 
+variable "cake_agents_image_tag" {
+  type        = string
+  description = "Override for the cake-agents container image tag. When null, the image tag defaults to cake_agents_chart_version."
+  default     = null
+}
+
 variable "cake_agents_chart_upstream_registry" {
   type        = string
   description = "Upstream ECR registry hosting the cake-agents Helm chart."

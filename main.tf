@@ -79,6 +79,8 @@ module "cluster" {
   name     = var.name
   hostname = local.hostname
 
+  cake_console_url = var.cake_console_url
+
   route53_zone_id = local.zone_id
   certificate_arn = local.certificate_arn
 
@@ -95,6 +97,7 @@ module "cluster" {
 
   cake_agents_chart_version           = var.cake_agents_chart_version
   cake_agents_chart_upstream_registry = var.cake_agents_chart_upstream_registry
+  cake_agents_image_tag               = var.cake_agents_image_tag
 
   database_multi_az            = var.database_multi_az
   database_deletion_protection = var.database_deletion_protection

@@ -44,6 +44,12 @@ variable "cake_agents_chart_upstream_registry" {
   default     = "684117700585.dkr.ecr.us-east-2.amazonaws.com"
 }
 
+variable "cake_agents_image_tag" {
+  type        = string
+  description = "Override for the cake-agents container image tag. When null, the image tag defaults to cake_agents_chart_version."
+  default     = null
+}
+
 # --- DNS: bring-your-own or let the module create it ---
 
 variable "zone_id" {

@@ -8,6 +8,12 @@ variable "hostname" {
   description = "Apex hostname for the cake-agents Ingress (e.g. agents.example.com). Must be covered by certificate_arn and resolvable via route53_zone_id."
 }
 
+variable "cake_console_url" {
+  type        = string
+  description = "Cake Console base URL passed to the cake-agents control plane as the CAKE_CONSOLE_URL environment variable."
+  default     = "https://console.cake.ai"
+}
+
 variable "certificate_arn" {
   type        = string
   description = "ARN of a validated ACM certificate covering hostname. Typically from the dns module or a pre-existing certificate."
@@ -102,6 +108,12 @@ variable "cake_agents_chart_upstream_registry" {
   type        = string
   description = "Upstream ECR registry hosting the cake-agents chart. Used as the pull-through cache upstream."
   default     = "684117700585.dkr.ecr.us-east-2.amazonaws.com"
+}
+
+variable "cake_agents_image_tag" {
+  type        = string
+  description = "Override for the cake-agents container image tag. When null, the image tag defaults to cake_agents_chart_version."
+  default     = null
 }
 
 variable "cake_agents_chart_repository_prefix" {

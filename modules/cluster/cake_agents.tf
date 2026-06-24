@@ -81,24 +81,31 @@ resource "helm_release" "cake_agents" {
         default = local.image_registry
       }
       image = {
-        tag = var.cake_agents_chart_version
+        tag = coalesce(var.cake_agents_image_tag, var.cake_agents_chart_version)
       }
-      controlPlane = merge({
+      controlPlane = {
         host = var.hostname
         extraHosts = concat(
           var.oidc == null ? [] : [regex("^https?://([^/:]+)", var.oidc.issuer)[0]],
           var.extra_hosts,
         )
-        }, var.password_auth_enabled ? {
         deployment = {
-          extraEnv = [
-            {
-              name  = "CAKE_EMAIL_AND_PASSWORD_ENABLED"
-              value = "true"
-            }
-          ]
+          extraEnv = concat(
+            [
+              {
+                name  = "CAKE_CONSOLE_URL"
+                value = var.cake_console_url
+              }
+            ],
+            var.password_auth_enabled ? [
+              {
+                name  = "CAKE_EMAIL_AND_PASSWORD_ENABLED"
+                value = "true"
+              }
+            ] : [],
+          )
         }
-      } : {})
+      }
       pathPrefix = "/"
       postgresql = {
         enabled = false

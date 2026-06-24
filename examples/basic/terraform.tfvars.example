@@ -9,6 +9,10 @@ vpc_cidr = "10.0.0.0/16"
 
 cake_agents_chart_version = "0.11.0"
 
+# Optional override for the cake-agents container image tag. Leave unset to
+# default the image tag to cake_agents_chart_version.
+# cake_agents_image_tag = "0.11.0"
+
 # An arbitrary string used to identify the provider in Cake Agents. In the
 # future, we will support multiple SSO providers, and this ID will be used to
 # distinguish between them. For now, it can just be "oidc".

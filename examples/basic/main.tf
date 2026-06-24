@@ -54,6 +54,7 @@ module "cake_agents" {
   cake_console_url = var.cake_console_url
 
   cake_agents_chart_version           = var.cake_agents_chart_version
+  cake_agents_image_tag               = var.cake_agents_image_tag
   cake_agents_chart_upstream_registry = var.cake_agents_chart_upstream_registry
 }
 
