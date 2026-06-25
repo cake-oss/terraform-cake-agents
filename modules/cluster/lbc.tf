@@ -270,5 +270,12 @@ resource "helm_release" "aws_load_balancer_controller" {
     # Keep system nodes alive until LBC is gone; otherwise ingress finalizers
     # can stall because the controller pod cannot run during destroy.
     module.eks.eks_managed_node_groups,
+    # Keep the VPC egress path (NAT gateway + private routes) alive until the
+    # controller is gone. Nodes are private with no VPC endpoints, so the LBC
+    # reaches the ELB API only via NAT. The local.vpc_id reference above only
+    # depends on aws_vpc.this, NOT the NAT/routes, so without this whole-module
+    # edge Terraform tears down egress in parallel with the ingress finalizer
+    # and the DeleteLoadBalancer call hangs.
+    module.vpc,
   ]
 }

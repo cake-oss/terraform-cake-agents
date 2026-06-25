@@ -14,7 +14,29 @@ resource "kubernetes_namespace_v1" "cake_agents" {
     name = "cake-agents"
   }
 
-  depends_on = [time_sleep.eks_auth_propagation]
+  # Order this namespace's destroy ahead of two things that its finalizer
+  # depends on. Deleting the namespace runs a discovery sweep that proxies
+  # through the API server to the metrics-server pod (which registers the
+  # v1beta1.metrics.k8s.io aggregated APIService); if that path is broken while
+  # the namespace is still Terminating, the sweep fails with
+  # NamespaceDeletionDiscoveryFailure and the namespace hangs.
+  #
+  #   module.eks - keeps the metrics-server addon and its host nodes alive.
+  #   module.vpc - keeps the in-cluster data path (private route table + NAT)
+  #                alive. The proxied metrics-server call is control-plane ENI
+  #                -> pod/kubelet in the private subnets; module.eks/subnet refs
+  #                pin the subnets but NOT the routes/NAT, so without this edge
+  #                Terraform tears them down in parallel with the namespace and
+  #                metrics.k8s.io goes unavailable mid-finalize.
+  #
+  # Both are resource-level depends_on (this is a resource, not a module block),
+  # so they don't trigger the count-unknown problem that a module-level
+  # depends_on = [module.vpc] would.
+  depends_on = [
+    time_sleep.eks_auth_propagation,
+    module.eks,
+    module.vpc,
+  ]
 }
 
 resource "random_password" "cake_agents_db" {

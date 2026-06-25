@@ -50,6 +50,19 @@ module "eks" {
     metrics-server         = {}
     vpc-cni = {
       before_compute = true
+      # IP-level warming instead of whole-ENI warming. WARM_ENI_TARGET=0 stops
+      # vpc-cni from pre-attaching a spare ENI per node; those spares get
+      # detached when the warm pool shrinks and then leak as "available" ENIs
+      # that block subnet deletion on teardown (nothing owns them once the node
+      # is gone). Warming individual IPs avoids creating them and conserves
+      # subnet IP space.
+      configuration_values = jsonencode({
+        env = {
+          WARM_ENI_TARGET   = "0"
+          WARM_IP_TARGET    = "5"
+          MINIMUM_IP_TARGET = "10"
+        }
+      })
     }
     aws-ebs-csi-driver = {
       pod_identity_association = [{
@@ -61,6 +74,23 @@ module "eks" {
 
   node_security_group_tags = {
     "karpenter.sh/discovery" = var.name
+  }
+
+  # The metrics-server addon (v0.8.x) serves on 10251; the module's default node
+  # SG rules only open the control-plane webhook ports (incl. the old 4443) and
+  # kubelet 10250, so the aggregation layer can't reach metrics-server and the
+  # metrics.k8s.io APIService stays FailedDiscoveryCheck. That breaks `kubectl
+  # top`/HPAs and makes every namespace deletion's discovery sweep fail. Open
+  # 10251 from the cluster security group to fix it.
+  node_security_group_additional_rules = {
+    metrics_server = {
+      description                   = "Cluster API to metrics-server (10251)"
+      protocol                      = "tcp"
+      from_port                     = 10251
+      to_port                       = 10251
+      type                          = "ingress"
+      source_cluster_security_group = true
+    }
   }
 
   # The system node group runs Karpenter itself on cheap arm64 instances.

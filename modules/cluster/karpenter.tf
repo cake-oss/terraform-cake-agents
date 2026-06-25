@@ -46,7 +46,16 @@ resource "helm_release" "karpenter" {
     }
   })]
 
-  depends_on = [module.karpenter, module.eks.eks_managed_node_groups]
+  depends_on = [
+    module.karpenter,
+    module.eks.eks_managed_node_groups,
+    # Keep the VPC (subnets, NAT, routes) alive until Karpenter has drained and
+    # terminated its out-of-band EC2 nodes. Those nodes' ENIs sit in the private
+    # subnets; the references in this module only pin aws_vpc.this, so without
+    # this edge Terraform can delete subnets/IGW while node ENIs still exist,
+    # blocking VPC teardown.
+    module.vpc,
+  ]
 }
 
 resource "kubectl_manifest" "karpenter_ec2nodeclass" {
