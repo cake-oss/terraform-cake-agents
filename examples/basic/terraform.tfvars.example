@@ -1,37 +1,36 @@
-name      = "prod"
-region    = "us-east-2"
+cake_agents_chart_version = "0.11.2"
+
+name        = "prod"
+region      = "us-east-2"
 install_key = "get_me_from_cake"
+
+cake_console_url = "https://console.cake.ai"
+
+# Optional override for the cake-agents container image tag. Leave unset to
+# default the image tag to cake_agents_chart_version.
+# cake_agents_image_tag = "0.11.2"
 
 # CIDR block for the new VPC. The default below is fine for a standalone VPC.
 # Change it if you intend to peer this VPC with another one that uses a
 # conflicting range (peered VPCs cannot have overlapping CIDRs).
-vpc_cidr = "10.0.0.0/16"
+# vpc_cidr = "10.0.0.0/16"
 
-cake_agents_chart_version = "0.11.0"
+# Optional OIDC configuration for the cake-agents Helm chart. When unset, no
+# OIDC block is passed and only email/password auth is available.
+# oidc = {
+#   provider_id   = "google"
+#   domain        = "example.com"
+#   issuer        = "https://accounts.google.com"
+#   client_id     = "874461285778-q1r838cptfghrb3qlvkv6mvpjspg8b1p.apps.googleusercontent.com"
+#   client_secret = "GOCSPX-..."
+#   public_client = false
+#   scopes        = ["openid", "email", "profile"]
+# }
 
-# Optional override for the cake-agents container image tag. Leave unset to
-# default the image tag to cake_agents_chart_version.
-# cake_agents_image_tag = "0.11.0"
-
-# An arbitrary string used to identify the provider in Cake Agents. In the
-# future, we will support multiple SSO providers, and this ID will be used to
-# distinguish between them. For now, it can just be "oidc".
-oidc_provider_id = "oidc"
-# Set to require users log in with an email address from a specific domain
-# (e.g. your company SSO).
-oidc_domain = "example.com"
-# The OIDC issuer URL. This is the URL that Cake Agents will use to fetch the
-# provider's public keys and verify tokens. It must be a valid OIDC issuer that
-# conforms to the OIDC discovery spec (i.e. it must have a well-known
-# configuration endpoint at `${issuer}/.well-known/openid-configuration`).
-oidc_issuer = "https://oidc.example.com"
-# The client ID that Cake Agents will expect in the OIDC token. This should
-# match the client ID configured in your OIDC provider for the Cake Agents
-# application.
-oidc_client_id = "cake-agents"
-# The client secret associated with the above client ID. Only needed if
-# oidc_public_client is false.
-oidc_client_secret = "get_me_from_your_oidc_provider"
-# Set to true if your OIDC provider does not require a client secret, and leave
-# oidc_client_secret blank in that case.
-oidc_public_client = false
+# Additional hosts appended to controlPlane.extraHosts. The OIDC issuer host is
+# added automatically.
+# extra_hosts = [
+#   "https://oauth2.googleapis.com",
+#   "https://www.googleapis.com",
+#   "https://openidconnect.googleapis.com",
+# ]
