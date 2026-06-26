@@ -140,8 +140,10 @@ resource "kubectl_manifest" "karpenter_nodepool" {
 # helm_release.karpenter (which this waiter depends on) uninstalled. Without this
 # gate the controller is removed within seconds of the NodePool deletion, leaving
 # its half-drained nodes orphaned with attached ENIs that block node SG and subnet
-# teardown. null_resource.eni_cleanup remains the failsafe that force-terminates
-# anything this graceful path leaves behind (e.g. if the drain times out).
+# teardown. If the graceful drain stalls (e.g. the controller is unhealthy), this
+# waiter force-terminates the stragglers itself once a grace period elapses. It is
+# ordered after the cake-agents ingress (which depends on the NodePool), so even a
+# force-terminate here cannot yank an ALB target mid teardown.
 resource "null_resource" "karpenter_drain" {
   count = var.enable_karpenter_drain ? 1 : 0
 
@@ -165,7 +167,8 @@ resource "null_resource" "karpenter_drain" {
         exit 0
       fi
 
-      deadline=$(( SECONDS + 600 ))  # 10m for Karpenter to drain gracefully
+      deadline=$(( SECONDS + 600 ))  # 10m hard cap
+      force_after=300                # let Karpenter drain gracefully for 5m first
       clear_polls=0
 
       while :; do
@@ -192,11 +195,21 @@ resource "null_resource" "karpenter_drain" {
           fi
         else
           clear_polls=0
-          echo "karpenter-drain: waiting for Karpenter to terminate: $instances" >&2
+          if [ "$SECONDS" -ge "$force_after" ]; then
+            # Graceful drain has stalled past the grace period; force-terminate.
+            # Safe here: the ingress/ALB is already gone by this point.
+            echo "karpenter-drain: grace elapsed; force-terminating: $instances" >&2
+            aws ec2 terminate-instances \
+              --region "$AWS_REGION" \
+              --instance-ids $instances >/dev/null 2>&1 \
+              || echo "karpenter-drain: terminate-instances failed; will retry" >&2
+          else
+            echo "karpenter-drain: waiting for Karpenter to terminate: $instances" >&2
+          fi
         fi
 
         if [ "$SECONDS" -ge "$deadline" ]; then
-          echo "karpenter-drain: timeout; leaving remainder to the eni_cleanup failsafe" >&2
+          echo "karpenter-drain: timeout; leaving remainder to terraform" >&2
           break
         fi
 

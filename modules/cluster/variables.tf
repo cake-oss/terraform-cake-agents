@@ -172,7 +172,7 @@ variable "enable_karpenter_drain" {
 
 variable "enable_eni_cleanup" {
   type        = bool
-  description = "On destroy, run an aws-cli local-exec that terminates this cluster's orphaned Karpenter nodes and deletes leftover ENIs left in the VPC, which otherwise block node security group and subnet/VPC deletion. Requires the aws CLI on the machine running terraform. Set false to skip."
+  description = "On destroy, run an aws-cli local-exec that deletes leftover detached ENIs left in the VPC, which EKS/VPC-CNI can leak and which block subnet/VPC deletion. Node termination is handled by enable_karpenter_drain (Karpenter nodes) and Terraform (system node group); this only sweeps ENIs. Requires the aws CLI on the machine running terraform. Set false to skip."
   default     = true
 }
 

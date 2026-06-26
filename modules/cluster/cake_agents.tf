@@ -180,6 +180,12 @@ resource "helm_release" "cake_agents" {
     kubernetes_secret_v1.cake_agents_slack_creds,
     kubernetes_secret_v1.cake_agents_oidc_creds,
     aws_eks_pod_identity_association.cake_agents,
+    # Tear the app down before the Karpenter NodePool. Deleting the NodePool
+    # makes Karpenter drain the workload nodes; if that happens while the app is
+    # still up, the in-flight ALB/target-group teardown loses its targets mid
+    # delete and stalls. Ordering here keeps the workload nodes alive until the
+    # app (and, transitively, the ingress that depends on it) is gone.
+    kubectl_manifest.karpenter_nodepool,
   ]
 }
 
@@ -227,6 +233,10 @@ resource "kubernetes_ingress_v1" "cake_agents" {
   depends_on = [
     helm_release.aws_load_balancer_controller,
     helm_release.cake_agents,
+    # Destroy the ingress (and let the LBC fully delete the ALB and target
+    # group) before the NodePool is deleted, so the workload nodes backing the
+    # ALB targets are still alive during target-group teardown.
+    kubectl_manifest.karpenter_nodepool,
   ]
 }
 
