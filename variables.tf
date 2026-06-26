@@ -177,6 +177,12 @@ variable "s3_force_destroy" {
   default     = false
 }
 
+variable "enable_eni_cleanup" {
+  type        = bool
+  description = "On destroy, run an aws-cli local-exec that deletes leftover 'available' (detached) ENIs tagged for this cluster, which EKS/VPC-CNI can leave behind and which block subnet/VPC deletion. Requires the aws CLI on the machine running terraform. Set false to skip."
+  default     = true
+}
+
 variable "extra_hosts" {
   type        = list(string)
   description = "Additional entries appended to the cake-agents controlPlane.extraHosts. The OIDC issuer host is added automatically."

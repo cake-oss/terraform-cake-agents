@@ -62,7 +62,7 @@ See [examples/github-actions](examples/github-actions/). The example provisions 
 
 | Name | Version |
 | ---- | ------- |
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.9 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.12 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 6.0 |
 | <a name="requirement_helm"></a> [helm](#requirement\_helm) | >= 3.0.0 |
 | <a name="requirement_kubectl"></a> [kubectl](#requirement\_kubectl) | >= 2.1.0 |
@@ -108,6 +108,7 @@ See [examples/github-actions](examples/github-actions/). The example provisions 
 | <a name="input_database_multi_az"></a> [database\_multi\_az](#input\_database\_multi\_az) | Provision RDS in multi-AZ mode. | `bool` | `false` | no |
 | <a name="input_deploy_role_name"></a> [deploy\_role\_name](#input\_deploy\_role\_name) | IAM role granted KMS admin on the per-cluster keys. Leave null when applying with admin credentials. | `string` | `null` | no |
 | <a name="input_enable_ecr_pull_through"></a> [enable\_ecr\_pull\_through](#input\_enable\_ecr\_pull\_through) | Set up an ECR pull-through cache for the cake-agents chart. Recommended. | `bool` | `true` | no |
+| <a name="input_enable_eni_cleanup"></a> [enable\_eni\_cleanup](#input\_enable\_eni\_cleanup) | On destroy, run an aws-cli local-exec that deletes leftover 'available' (detached) ENIs tagged for this cluster, which EKS/VPC-CNI can leave behind and which block subnet/VPC deletion. Requires the aws CLI on the machine running terraform. Set false to skip. | `bool` | `true` | no |
 | <a name="input_enable_s3_object_storage"></a> [enable\_s3\_object\_storage](#input\_enable\_s3\_object\_storage) | Provision S3 object storage for cake-agents and configure the Helm chart to use it. | `bool` | `true` | no |
 | <a name="input_extra_hosts"></a> [extra\_hosts](#input\_extra\_hosts) | Additional entries appended to the cake-agents controlPlane.extraHosts. The OIDC issuer host is added automatically. | `list(string)` | `[]` | no |
 | <a name="input_hostname"></a> [hostname](#input\_hostname) | Apex hostname the cake-agents UI/API is served from (e.g. agents.example.com). Optional when install\_key is set, in which case hostname is discovered from Cake Console. | `string` | `null` | no |

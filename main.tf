@@ -108,6 +108,8 @@ module "cluster" {
   s3_prefix                = var.s3_prefix
   s3_force_destroy         = var.s3_force_destroy
 
+  enable_eni_cleanup = var.enable_eni_cleanup
+
   extra_hosts = var.extra_hosts
 
   oidc  = var.oidc

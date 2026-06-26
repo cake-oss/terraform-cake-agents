@@ -44,6 +44,7 @@ This requires `helm` and `aws` CLIs on the machine running `terraform apply`. Se
 | <a name="provider_helm"></a> [helm](#provider\_helm) | >= 3.0.0 |
 | <a name="provider_kubectl"></a> [kubectl](#provider\_kubectl) | >= 2.1.0 |
 | <a name="provider_kubernetes"></a> [kubernetes](#provider\_kubernetes) | >= 2.0.0 |
+| <a name="provider_null"></a> [null](#provider\_null) | ~> 3.0 |
 | <a name="provider_random"></a> [random](#provider\_random) | ~> 3.0 |
 | <a name="provider_time"></a> [time](#provider\_time) | ~> 0.9 |
 
@@ -96,6 +97,7 @@ This requires `helm` and `aws` CLIs on the machine running `terraform apply`. Se
 | [kubernetes_secret_v1.cake_agents_db_creds](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/secret_v1) | resource |
 | [kubernetes_secret_v1.cake_agents_oidc_creds](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/secret_v1) | resource |
 | [kubernetes_secret_v1.cake_agents_slack_creds](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/secret_v1) | resource |
+| [null_resource.eni_cleanup](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [random_password.cake_agents_db](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
 | [time_sleep.eks_auth_propagation](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/sleep) | resource |
 | [aws_availability_zones.available](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/availability_zones) | data source |
@@ -124,6 +126,7 @@ This requires `helm` and `aws` CLIs on the machine running `terraform apply`. Se
 | <a name="input_database_multi_az"></a> [database\_multi\_az](#input\_database\_multi\_az) | Provision the RDS instance in multi-AZ mode. Required for production-grade availability. | `bool` | `false` | no |
 | <a name="input_deploy_role_name"></a> [deploy\_role\_name](#input\_deploy\_role\_name) | IAM role granted admin actions on the per-cluster KMS keys so it can re-apply this module. Set to the role used by your CI/CD; leave null when applying with admin credentials (the account root already has access). | `string` | `null` | no |
 | <a name="input_enable_ecr_pull_through"></a> [enable\_ecr\_pull\_through](#input\_enable\_ecr\_pull\_through) | Provision the ECR pull-through cache rule for the cake-agents chart and warm it before installing Helm. Recommended; disable only if you mirror the chart yourself via registry. | `bool` | `true` | no |
+| <a name="input_enable_eni_cleanup"></a> [enable\_eni\_cleanup](#input\_enable\_eni\_cleanup) | On destroy, run an aws-cli local-exec that deletes leftover 'available' (detached) ENIs tagged for this cluster, which EKS/VPC-CNI can leave behind and which block subnet/VPC deletion. Requires the aws CLI on the machine running terraform. Set false to skip. | `bool` | `true` | no |
 | <a name="input_enable_s3_object_storage"></a> [enable\_s3\_object\_storage](#input\_enable\_s3\_object\_storage) | Provision S3 object storage for cake-agents and configure the Helm chart to use it. | `bool` | `true` | no |
 | <a name="input_extra_hosts"></a> [extra\_hosts](#input\_extra\_hosts) | Additional entries appended to the cake-agents controlPlane.extraHosts. The OIDC issuer host is added automatically. | `list(string)` | `[]` | no |
 | <a name="input_hostname"></a> [hostname](#input\_hostname) | Apex hostname for the cake-agents Ingress (e.g. agents.example.com). Must be covered by certificate\_arn and resolvable via route53\_zone\_id. | `string` | n/a | yes |
