@@ -123,5 +123,87 @@ resource "kubectl_manifest" "karpenter_nodepool" {
   depends_on = [
     kubectl_manifest.karpenter_ec2nodeclass,
     module.karpenter,
+    # Destroy ordering: the NodePool must be torn down before this waiter (which
+    # is in turn torn down before helm_release.karpenter). See the waiter below.
+    null_resource.karpenter_drain,
   ]
+}
+
+# Graceful teardown gate: give Karpenter time to drain and terminate the nodes it
+# launched BEFORE its controller is uninstalled.
+#
+# On destroy Terraform deletes kubectl_manifest.karpenter_nodepool first (it
+# depends on this waiter, so it is destroyed before it). Deleting the NodePool
+# cascades via ownerReferences to its NodeClaims, whose Karpenter finalizers
+# cordon, drain, and terminate the backing EC2 instances. This waiter then blocks
+# until no Karpenter-owned instances remain, and only then is
+# helm_release.karpenter (which this waiter depends on) uninstalled. Without this
+# gate the controller is removed within seconds of the NodePool deletion, leaving
+# its half-drained nodes orphaned with attached ENIs that block node SG and subnet
+# teardown. null_resource.eni_cleanup remains the failsafe that force-terminates
+# anything this graceful path leaves behind (e.g. if the drain times out).
+resource "null_resource" "karpenter_drain" {
+  count = var.enable_karpenter_drain ? 1 : 0
+
+  triggers = {
+    cluster_name = var.name
+    region       = data.aws_region.current.region
+  }
+
+  provisioner "local-exec" {
+    when        = destroy
+    interpreter = ["/bin/bash", "-c"]
+    environment = {
+      CLUSTER_NAME = self.triggers.cluster_name
+      AWS_REGION   = self.triggers.region
+    }
+    command = <<-EOT
+      set -uo pipefail
+
+      if ! command -v aws >/dev/null 2>&1; then
+        echo "karpenter-drain: aws CLI not found; skipping" >&2
+        exit 0
+      fi
+
+      deadline=$(( SECONDS + 600 ))  # 10m for Karpenter to drain gracefully
+      clear_polls=0
+
+      while :; do
+        # This cluster's Karpenter nodes. shutting-down is included so we wait out
+        # in-progress terminations rather than exiting while they finish. The
+        # managed system node group has no karpenter.sh/nodepool tag, so it is not
+        # counted here (Terraform tears it down separately).
+        instances=$(aws ec2 describe-instances \
+          --region "$AWS_REGION" \
+          --filters \
+            "Name=tag:eks:eks-cluster-name,Values=$CLUSTER_NAME" \
+            "Name=tag-key,Values=karpenter.sh/nodepool" \
+            "Name=instance-state-name,Values=pending,running,stopping,stopped,shutting-down" \
+          --query 'Reservations[].Instances[].InstanceId' \
+          --output text 2>/dev/null || true)
+
+        if [ -z "$instances" ]; then
+          # Two consecutive clear polls to avoid racing the cascade GC that has
+          # not yet created the NodeClaim deletions.
+          clear_polls=$(( clear_polls + 1 ))
+          if [ "$clear_polls" -ge 2 ]; then
+            echo "karpenter-drain: all Karpenter nodes drained" >&2
+            break
+          fi
+        else
+          clear_polls=0
+          echo "karpenter-drain: waiting for Karpenter to terminate: $instances" >&2
+        fi
+
+        if [ "$SECONDS" -ge "$deadline" ]; then
+          echo "karpenter-drain: timeout; leaving remainder to the eni_cleanup failsafe" >&2
+          break
+        fi
+
+        sleep 15
+      done
+    EOT
+  }
+
+  depends_on = [helm_release.karpenter]
 }

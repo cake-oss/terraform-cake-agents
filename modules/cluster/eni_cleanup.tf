@@ -1,16 +1,22 @@
-# Best-effort teardown safety net for leaked ENIs.
+# Best-effort teardown safety net for orphaned Karpenter nodes and leaked ENIs.
 #
-# EKS/VPC-CNI can leave "available" (detached) ENIs behind in the cluster VPC
-# when nodes terminate. Nothing owns them once the node is gone, so they aren't
-# deleted by any managed resource and they block subnet (and therefore VPC)
-# deletion at the end of a destroy.
+# On destroy, the Karpenter Helm release is removed early, so the Karpenter
+# controller dies before it can terminate the worker nodes it launched. Those
+# orphaned EC2 instances keep their VPC-CNI ENIs attached, which blocks deletion
+# of the node security group and the subnets (and therefore the VPC). EKS/VPC-CNI
+# can also leave detached "available" ENIs behind. Nothing owns either once the
+# controller is gone, so no managed resource cleans them up.
 #
-# This null_resource depends ONLY on the VPC. On destroy that means the VPC
-# waits for this provisioner to finish, while EKS/node teardown runs
-# concurrently (EKS has no edge to this resource). The provisioner polls in a
-# loop, deleting orphaned ENIs as nodes release them, right up until the VPC is
-# torn down. Deletions are scoped to this cluster via the VPC-CNI ownership tag,
-# so it is safe even in a shared, bring-your-own VPC.
+# This null_resource depends ONLY on the VPC. On destroy that means the VPC waits
+# for this provisioner to finish, while EKS/node teardown runs concurrently (EKS
+# has no edge to this resource). The provisioner loops: it terminates this
+# cluster's Karpenter instances, deletes detached cluster ENIs, and does not exit
+# until no cluster-owned ENIs of any status remain in the VPC. Gating on the ENI
+# count (rather than a fixed timer) is what keeps it alive through the full node
+# teardown instead of quitting before the nodes have leaked anything. Everything
+# is scoped to this cluster by tag, so it is safe even in a shared, bring-your-own
+# VPC. The managed system node group is left to Terraform (no karpenter tag, so it
+# is never terminated here); we only wait for its ENIs to clear.
 resource "null_resource" "eni_cleanup" {
   count = var.enable_eni_cleanup ? 1 : 0
 
@@ -39,12 +45,34 @@ resource "null_resource" "eni_cleanup" {
         exit 0
       fi
 
-      deadline=$(( SECONDS + 900 ))  # up to 15m; overlaps EKS/node teardown
-      min_runtime=120                # don't quit before nodes can release ENIs
-      empty_polls=0
+      deadline=$(( SECONDS + 1200 ))  # 20m hard cap; overlaps EKS/node teardown
+      clear_polls=0
 
       while :; do
-        enis=$(aws ec2 describe-network-interfaces \
+        # Terminate this cluster's Karpenter nodes. Their controller is already
+        # gone on destroy, so nothing else will. The managed system node group is
+        # untagged here and left to Terraform. instance-state filter excludes
+        # already-terminating/terminated instances.
+        instances=$(aws ec2 describe-instances \
+          --region "$AWS_REGION" \
+          --filters \
+            "Name=vpc-id,Values=$VPC_ID" \
+            "Name=instance-state-name,Values=pending,running,stopping,stopped" \
+            "Name=tag-key,Values=karpenter.sh/nodepool" \
+          --query 'Reservations[].Instances[].InstanceId' \
+          --output text 2>/dev/null || true)
+
+        if [ -n "$instances" ]; then
+          echo "eni-cleanup: terminating orphaned Karpenter instances: $instances" >&2
+          aws ec2 terminate-instances \
+            --region "$AWS_REGION" \
+            --instance-ids $instances >/dev/null 2>&1 \
+            || echo "eni-cleanup: terminate-instances call failed; will retry" >&2
+        fi
+
+        # Delete detached (available) cluster ENIs. Attached ones clear when their
+        # instance terminates; this mops up the ones that leak as "available".
+        avail=$(aws ec2 describe-network-interfaces \
           --region "$AWS_REGION" \
           --filters \
             "Name=vpc-id,Values=$VPC_ID" \
@@ -53,28 +81,37 @@ resource "null_resource" "eni_cleanup" {
           --query 'NetworkInterfaces[].NetworkInterfaceId' \
           --output text 2>/dev/null || true)
 
-        if [ -n "$enis" ]; then
-          empty_polls=0
-          for eni in $enis; do
-            echo "eni-cleanup: deleting orphaned ENI $eni" >&2
-            aws ec2 delete-network-interface \
-              --region "$AWS_REGION" \
-              --network-interface-id "$eni" 2>/dev/null \
-              || echo "eni-cleanup: could not delete $eni (now in use?); skipping" >&2
-          done
-        else
-          empty_polls=$(( empty_polls + 1 ))
-        fi
+        for eni in $avail; do
+          echo "eni-cleanup: deleting detached ENI $eni" >&2
+          aws ec2 delete-network-interface \
+            --region "$AWS_REGION" \
+            --network-interface-id "$eni" 2>/dev/null \
+            || echo "eni-cleanup: could not delete $eni (now in use?); skipping" >&2
+        done
 
-        # Settle: a few consecutive empty polls, but never before min_runtime so
-        # we don't exit before EKS has had a chance to release its ENIs.
-        if [ "$empty_polls" -ge 3 ] && [ "$SECONDS" -ge "$min_runtime" ]; then
-          echo "eni-cleanup: no orphaned ENIs remaining" >&2
-          break
+        # Exit only once NO cluster-owned ENIs of any status remain in the VPC:
+        # in-use ones mean nodes (Karpenter or the managed group) are still up, so
+        # keep waiting. Require two consecutive clear polls to avoid a race.
+        remaining=$(aws ec2 describe-network-interfaces \
+          --region "$AWS_REGION" \
+          --filters \
+            "Name=vpc-id,Values=$VPC_ID" \
+            "Name=tag:cluster.k8s.amazonaws.com/name,Values=$CLUSTER_NAME" \
+          --query 'NetworkInterfaces[].NetworkInterfaceId' \
+          --output text 2>/dev/null || true)
+
+        if [ -z "$remaining" ] && [ -z "$instances" ]; then
+          clear_polls=$(( clear_polls + 1 ))
+          if [ "$clear_polls" -ge 2 ]; then
+            echo "eni-cleanup: no cluster ENIs or Karpenter nodes remaining" >&2
+            break
+          fi
+        else
+          clear_polls=0
         fi
 
         if [ "$SECONDS" -ge "$deadline" ]; then
-          echo "eni-cleanup: timeout reached; leaving remaining ENIs to terraform" >&2
+          echo "eni-cleanup: timeout reached; leaving remainder to terraform" >&2
           break
         fi
 

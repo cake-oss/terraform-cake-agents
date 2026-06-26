@@ -164,9 +164,15 @@ variable "s3_force_destroy" {
   default     = false
 }
 
+variable "enable_karpenter_drain" {
+  type        = bool
+  description = "On destroy, block the Karpenter Helm uninstall until Karpenter has drained and terminated the nodes it launched (the NodePool is deleted first). Prevents orphaned worker nodes whose ENIs block subnet/VPC teardown. Requires the aws CLI on the machine running terraform. Set false to skip the wait and rely on enable_eni_cleanup."
+  default     = true
+}
+
 variable "enable_eni_cleanup" {
   type        = bool
-  description = "On destroy, run an aws-cli local-exec that deletes leftover 'available' (detached) ENIs tagged for this cluster, which EKS/VPC-CNI can leave behind and which block subnet/VPC deletion. Requires the aws CLI on the machine running terraform. Set false to skip."
+  description = "On destroy, run an aws-cli local-exec that terminates this cluster's orphaned Karpenter nodes and deletes leftover ENIs left in the VPC, which otherwise block node security group and subnet/VPC deletion. Requires the aws CLI on the machine running terraform. Set false to skip."
   default     = true
 }
 
