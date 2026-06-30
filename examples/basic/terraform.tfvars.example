@@ -1,8 +1,8 @@
 cake_agents_chart_version = "0.11.2"
 
-name        = "prod"
+name        = "cake-agents"
 region      = "us-east-2"
-install_key = "get_me_from_cake"
+install_key = "get_me_from_https://console.cake.ai"
 
 cake_console_url = "https://console.cake.ai"
 
