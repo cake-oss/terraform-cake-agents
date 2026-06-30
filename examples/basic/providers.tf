@@ -1,3 +1,7 @@
+provider "aws" {
+  region = var.region
+}
+
 data "aws_ecr_authorization_token" "cake_upstream_ecr" {
   registry_id = split(".", var.cake_agents_chart_upstream_registry)[0]
 }

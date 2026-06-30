@@ -37,12 +37,6 @@ variable "install_key" {
   sensitive   = true
 }
 
-variable "extra_hosts" {
-  type        = list(string)
-  description = "Additional entries appended to the cake-agents controlPlane.extraHosts. The OIDC issuer host is added automatically."
-  default     = []
-}
-
 variable "password_auth_enabled" {
   type        = bool
   description = "Set to true to enable email/password authentication in addition to OIDC. This allows users to log in with an email and password (managed by Cake) instead of an OIDC token."
@@ -53,19 +47,4 @@ variable "cake_console_url" {
   type        = string
   description = "Cake Console base URL used for install validation-record provisioning."
   default     = "https://console.cake.ai"
-}
-
-variable "oidc" {
-  type = object({
-    provider_id   = string
-    domain        = string
-    issuer        = string
-    client_id     = string
-    public_client = bool
-    client_secret = optional(string)
-    scopes        = optional(list(string))
-  })
-  description = "Optional OIDC configuration for the cake-agents Helm chart. When null, no OIDC block is passed."
-  default     = null
-  sensitive   = true
 }

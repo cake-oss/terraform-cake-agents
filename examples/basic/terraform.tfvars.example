@@ -14,23 +14,3 @@ cake_console_url = "https://console.cake.ai"
 # Change it if you intend to peer this VPC with another one that uses a
 # conflicting range (peered VPCs cannot have overlapping CIDRs).
 # vpc_cidr = "10.0.0.0/16"
-
-# Optional OIDC configuration for the cake-agents Helm chart. When unset, no
-# OIDC block is passed and only email/password auth is available.
-# oidc = {
-#   provider_id   = "google"
-#   domain        = "example.com"
-#   issuer        = "https://accounts.google.com"
-#   client_id     = "874461285778-q1r838cptfghrb3qlvkv6mvpjspg8b1p.apps.googleusercontent.com"
-#   client_secret = "GOCSPX-..."
-#   public_client = false
-#   scopes        = ["openid", "email", "profile"]
-# }
-
-# Additional hosts appended to controlPlane.extraHosts. The OIDC issuer host is
-# added automatically.
-# extra_hosts = [
-#   "https://oauth2.googleapis.com",
-#   "https://www.googleapis.com",
-#   "https://openidconnect.googleapis.com",
-# ]

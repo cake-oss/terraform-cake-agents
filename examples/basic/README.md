@@ -5,7 +5,7 @@ Single-apply deployment of cake-agents with a new VPC and Cake-hosted DNS automa
 ## Prerequisites
 
 - AWS credentials with permission to apply the root module (see `modules/deploy-role` for the required IAM policies)
-- `helm` and `aws` CLIs available locally
+- `aws` CLI available locally
 - A Cake install key (`install_key`) for DNS automation, available from https://console.cake.ai
 
 ## Usage
