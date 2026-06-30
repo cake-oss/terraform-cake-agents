@@ -1,14 +1,13 @@
-cake_agents_chart_version = "0.11.2"
+# Cluster name. Names the EKS cluster and tags the supporting AWS resources, so
+# pick something that identifies this deployment in your AWS account.
+name = "cake-agents"
 
-name        = "cake-agents"
-region      = "us-east-2"
+# AWS region to deploy into. All resources are created here, so use a region
+# close to your users. Independent of your AWS CLI default region.
+region = "us-east-2"
+
+# Install key for Cake-hosted DNS automation. Get it from https://console.cake.ai
 install_key = "get_me_from_https://console.cake.ai"
-
-cake_console_url = "https://console.cake.ai"
-
-# Optional override for the cake-agents container image tag. Leave unset to
-# default the image tag to cake_agents_chart_version.
-# cake_agents_image_tag = "0.11.2"
 
 # CIDR block for the new VPC. The default below is fine for a standalone VPC.
 # Change it if you intend to peer this VPC with another one that uses a

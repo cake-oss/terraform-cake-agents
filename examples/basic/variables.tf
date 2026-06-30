@@ -1,28 +1,27 @@
 variable "name" {
   type        = string
-  description = "Cluster name (e.g. \"prod\")."
+  description = <<-EOT
+    Cluster name. Used to name the EKS cluster and tag the supporting AWS
+    resources (VPC, subnets, IAM roles, etc.), so pick something that
+    identifies this deployment within your AWS account — e.g. "cake-agents"
+    or "cake-agents-prod". Lowercase alphanumeric and hyphens.
+  EOT
 }
 
 variable "region" {
   type        = string
-  description = "AWS region to deploy into."
+  description = <<-EOT
+    AWS region to deploy into (e.g. "us-east-2"). All resources are created in
+    this region, so use one close to your users where the required services
+    (EKS, ACM) are available. This is independent of your AWS CLI default
+    region.
+  EOT
 }
 
 variable "vpc_cidr" {
   type        = string
   description = "CIDR block for the new VPC. Change this if you intend to peer this VPC with another one that uses a conflicting range."
   default     = "10.0.0.0/16"
-}
-
-variable "cake_agents_chart_version" {
-  type        = string
-  description = "cake-agents chart version. Get the latest from Cake."
-}
-
-variable "cake_agents_image_tag" {
-  type        = string
-  description = "Override for the cake-agents container image tag. When null, the image tag defaults to cake_agents_chart_version."
-  default     = null
 }
 
 variable "cake_agents_chart_upstream_registry" {
@@ -39,12 +38,6 @@ variable "install_key" {
 
 variable "password_auth_enabled" {
   type        = bool
-  description = "Set to true to enable email/password authentication in addition to OIDC. This allows users to log in with an email and password (managed by Cake) instead of an OIDC token."
+  description = "Set to true to enable email/password authentication. This allows users to log in with an email and password (managed by Cake)."
   default     = true
-}
-
-variable "cake_console_url" {
-  type        = string
-  description = "Cake Console base URL used for install validation-record provisioning."
-  default     = "https://console.cake.ai"
 }
