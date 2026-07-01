@@ -6,7 +6,7 @@ resource "restful_operation" "cake_hosted_hostname" {
 }
 
 locals {
-  cake_agents_default_chart_version = "0.12.1"
+  cake_agents_default_chart_version = "0.12.2"
   cake_agents_chart_version         = var.cake_agents_chart_version == null ? local.cake_agents_default_chart_version : trimspace(var.cake_agents_chart_version) == "" ? local.cake_agents_default_chart_version : var.cake_agents_chart_version
   hostname                          = nonsensitive(var.install_key == null ? var.hostname : restful_operation.cake_hosted_hostname[0].output.hostname)
 }
