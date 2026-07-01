@@ -43,7 +43,7 @@ provider "kubernetes" {
 }
 
 provider "restful" {
-  base_url = trimsuffix(var.cake_console_url, "/")
+  base_url = "https://console.cake.ai"
 
   header = var.install_key == null ? {} : {
     X-Cake-Install-Key = var.install_key

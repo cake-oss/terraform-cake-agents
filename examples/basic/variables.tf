@@ -24,20 +24,14 @@ variable "vpc_cidr" {
   default     = "10.0.0.0/16"
 }
 
-variable "cake_agents_chart_upstream_registry" {
-  type        = string
-  description = "Upstream ECR registry hosting the cake-agents Helm chart."
-  default     = "684117700585.dkr.ecr.us-east-2.amazonaws.com"
-}
-
 variable "install_key" {
   type        = string
   description = "Install key for Cake-hosted DNS automation."
   sensitive   = true
 }
 
-variable "password_auth_enabled" {
-  type        = bool
-  description = "Set to true to enable email/password authentication. This allows users to log in with an email and password (managed by Cake)."
-  default     = true
+variable "cake_agents_chart_upstream_registry" {
+  type        = string
+  description = "Upstream ECR registry hosting the cake-agents Helm chart."
+  default     = "684117700585.dkr.ecr.us-east-2.amazonaws.com"
 }
