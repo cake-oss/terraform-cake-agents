@@ -36,7 +36,7 @@ variable "password_auth_enabled" {
 variable "cake_agents_chart_version" {
   type        = string
   description = "Version of the cake-agents Helm chart to deploy."
-  default     = "0.12.0"
+  default     = "0.12.1"
 }
 
 variable "cake_agents_chart_upstream_registry" {
