@@ -99,7 +99,7 @@ See [examples/github-actions](examples/github-actions/). The example provisions 
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_cake_agents_chart_upstream_registry"></a> [cake\_agents\_chart\_upstream\_registry](#input\_cake\_agents\_chart\_upstream\_registry) | Upstream ECR registry hosting the cake-agents Helm chart. Used to authenticate Helm when pulling the chart directly. | `string` | `"684117700585.dkr.ecr.us-east-2.amazonaws.com"` | no |
-| <a name="input_cake_agents_chart_version"></a> [cake\_agents\_chart\_version](#input\_cake\_agents\_chart\_version) | Version of the cake-agents Helm chart to deploy. | `string` | n/a | yes |
+| <a name="input_cake_agents_chart_version"></a> [cake\_agents\_chart\_version](#input\_cake\_agents\_chart\_version) | Version of the cake-agents Helm chart to deploy. When null or an empty string, defaults to the version pinned by this module. | `string` | `null` | no |
 | <a name="input_cake_agents_image_tag"></a> [cake\_agents\_image\_tag](#input\_cake\_agents\_image\_tag) | Override for the cake-agents container image tag. When null, the image tag defaults to cake\_agents\_chart\_version. | `string` | `null` | no |
 | <a name="input_cake_console_url"></a> [cake\_console\_url](#input\_cake\_console\_url) | Cake Console base URL used for install validation-record provisioning. | `string` | `"https://console.cake.ai"` | no |
 | <a name="input_certificate_arn"></a> [certificate\_arn](#input\_certificate\_arn) | Existing validated ACM certificate ARN covering hostname. Required with zone\_id for bring-your-own DNS; otherwise created and validated automatically via Cake-hosted DNS. | `string` | `null` | no |

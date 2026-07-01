@@ -101,7 +101,13 @@ variable "registry" {
 
 variable "cake_agents_chart_version" {
   type        = string
-  description = "Version of the cake-agents Helm chart to deploy."
+  description = "Resolved version of the cake-agents Helm chart to deploy."
+  nullable    = false
+
+  validation {
+    condition     = trimspace(var.cake_agents_chart_version) != ""
+    error_message = "cake_agents_chart_version must not be empty."
+  }
 }
 
 variable "cake_agents_chart_upstream_registry" {

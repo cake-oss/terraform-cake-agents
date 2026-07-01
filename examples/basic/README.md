@@ -13,7 +13,7 @@ Single-apply deployment of cake-agents with a new VPC and Cake-hosted DNS automa
 ```bash
 cp terraform.tfvars.example terraform.tfvars
 # edit terraform.tfvars and add your install_key from https://console.cake.ai
-# also set name, region, and cake_agents_chart_version
+# also set name and region; cake_agents_chart_version defaults to the pinned version in this module
 # vpc_cidr defaults to 10.0.0.0/16 — change it if you'll peer this VPC with a conflicting range
 
 terraform init
