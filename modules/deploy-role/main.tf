@@ -20,6 +20,14 @@
 
 data "aws_caller_identity" "current" {}
 
+data "aws_partition" "current" {}
+
+locals {
+  upstream_registry_parts = split(".", var.cake_agents_chart_upstream_registry)
+  upstream_ecr_account_id = local.upstream_registry_parts[0]
+  upstream_ecr_region     = local.upstream_registry_parts[3]
+}
+
 ############
 # required #
 ############
@@ -298,14 +306,26 @@ data "aws_iam_policy_document" "required" {
       "ecr:GetDownloadUrlForLayer",
       # BatchImportUpstreamImage + CreateRepository together trigger the
       # pull-through cache to fetch and cache an upstream image on first pull.
-      # The warmup null_resource runs `helm pull` as the deploy principal.
       "ecr:BatchImportUpstreamImage",
       "ecr:CreateRepository",
       "ecr:DescribeRepositories",
       "ecr:DescribeImages",
       "ecr:ListImages",
     ]
-    resources = ["arn:aws:ecr:*:${data.aws_caller_identity.current.account_id}:repository/*"]
+    resources = ["arn:${data.aws_partition.current.partition}:ecr:*:${data.aws_caller_identity.current.account_id}:repository/*"]
+  }
+
+  statement {
+    sid = "ECRUpstreamRead"
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
+      "ecr:DescribeImages",
+      "ecr:DescribeRepositories",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:ListImages",
+    ]
+    resources = ["arn:${data.aws_partition.current.partition}:ecr:${local.upstream_ecr_region}:${local.upstream_ecr_account_id}:repository/*"]
   }
 }
 

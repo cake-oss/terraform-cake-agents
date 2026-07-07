@@ -12,6 +12,8 @@ The permissions are split along the same optional-component boundaries as the ro
 
 All three policies are **always created** so they're available to attach manually later. The `attach_optional_policies` variable only controls which of `vpc` and `dns` get attached to the role this module creates.
 
+If you override the root module's `cake_agents_chart_upstream_registry`, pass the same value to this module so the `required` policy grants ECR read access to the correct upstream registry.
+
 ## Two usage shapes
 
 **Policy only** (`create_role = false`, default): outputs `policy_arns` and `policy_jsons` (each a map keyed by `required`/`vpc`/`dns`). Attach the relevant ARNs to a role you manage elsewhere.
@@ -94,6 +96,7 @@ No modules.
 | [aws_iam_policy_document.dns](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.required](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_iam_policy_document.vpc](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_partition.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/partition) | data source |
 
 ## Inputs
 
@@ -101,6 +104,7 @@ No modules.
 | ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_assume_role_statements"></a> [assume\_role\_statements](#input\_assume\_role\_statements) | Trust relationship statements for the deploy role. Each entry becomes one statement in the role's assume\_role\_policy with its principals OR'd and its conditions AND'd. Multiple entries are OR'd at the policy level — use one entry per distinct trust pattern (e.g. one for GitHub Actions, one for SSO admin). Required when create\_role is true. | <pre>list(object({<br/>    principals = list(object({<br/>      type        = string<br/>      identifiers = list(string)<br/>    }))<br/>    conditions = optional(list(object({<br/>      test     = string<br/>      variable = string<br/>      values   = list(string)<br/>    })), [])<br/>  }))</pre> | `[]` | no |
 | <a name="input_attach_optional_policies"></a> [attach\_optional\_policies](#input\_attach\_optional\_policies) | Which of the optional split policies to attach to the role (the required policy is always attached). Drop "vpc" for BYO VPC. Drop "dns" for BYO Route53 zone + ACM certificate. All three policies are still created — this only controls attachment. | `list(string)` | <pre>[<br/>  "vpc",<br/>  "dns"<br/>]</pre> | no |
+| <a name="input_cake_agents_chart_upstream_registry"></a> [cake\_agents\_chart\_upstream\_registry](#input\_cake\_agents\_chart\_upstream\_registry) | Upstream ECR registry hosting the cake-agents Helm chart. Must match the root module's cake\_agents\_chart\_upstream\_registry when overriding the default. | `string` | `"684117700585.dkr.ecr.us-east-2.amazonaws.com"` | no |
 | <a name="input_create_role"></a> [create\_role](#input\_create\_role) | When true, create an IAM role with the trust relationship from assume\_role\_principals/conditions and attach the required policy (plus any optional policies in attach\_optional\_policies). When false, only the three policies are created and you attach the ones you need to a role you manage. | `bool` | `false` | no |
 | <a name="input_name"></a> [name](#input\_name) | Base name for IAM resources. The required policy is created as `<name>-required`; optional policies are `<name>-vpc` and `<name>-dns`. The role (when create\_role = true) is named `<name>`. | `string` | `"cake-agents-deploy"` | no |
 

@@ -10,6 +10,12 @@ variable "create_role" {
   default     = false
 }
 
+variable "cake_agents_chart_upstream_registry" {
+  type        = string
+  description = "Upstream ECR registry hosting the cake-agents Helm chart. Must match the root module's cake_agents_chart_upstream_registry when overriding the default."
+  default     = "684117700585.dkr.ecr.us-east-2.amazonaws.com"
+}
+
 variable "attach_optional_policies" {
   type        = list(string)
   description = "Which of the optional split policies to attach to the role (the required policy is always attached). Drop \"vpc\" for BYO VPC. Drop \"dns\" for BYO Route53 zone + ACM certificate. All three policies are still created — this only controls attachment."
