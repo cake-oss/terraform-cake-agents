@@ -1,0 +1,17 @@
+# Cluster name. Names the EKS cluster and tags the supporting AWS resources, so
+# pick something that identifies this deployment in your AWS account.
+name = "cake-agents"
+
+# AWS region to deploy into. The ACM certificate created by modules/dns is also
+# created in this region.
+region = "us-east-2"
+
+# Bring your own hostname instead of using a Cake-managed cakeagents.ai hostname.
+# This example creates a Route53 hosted zone for demo.cake.ai and outputs its NS
+# records so you can delegate it from your DNS provider.
+hostname = "demo.cake.ai"
+
+# CIDR block for the new VPC. The default below is fine for a standalone VPC.
+# Change it if you intend to peer this VPC with another one that uses a
+# conflicting range (peered VPCs cannot have overlapping CIDRs).
+# vpc_cidr = "10.0.0.0/16"

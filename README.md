@@ -8,11 +8,14 @@ A single `terraform apply` provisions a dedicated EKS cluster, supporting infras
 
 See **[examples/basic](examples/basic/)** for the full walkthrough (new VPC, Cake-hosted DNS automation) — clone the repo, fill in `terraform.tfvars` including your `install_key`, warm the ECR pull-through cache, then apply.
 
+If you want to use your own hostname instead of a Cake-managed `cakeagents.ai` hostname, see **[examples/bring-your-own-dns](examples/bring-your-own-dns/)**. That example uses `modules/dns` for a `demo.cake.ai` Route53 zone + ACM certificate and has you delegate the zone from wherever parent DNS is managed.
+
 ## Prerequisites
 
 - AWS credentials with the permissions in [modules/deploy-role](modules/deploy-role/) (or admin/SSO credentials)
 - `helm` and `aws` CLIs on the machine running `terraform apply` (the module warms the ECR pull-through cache via `helm pull` before installing the chart)
-- A Cake install key for DNS automation (`install_key`)
+- For Cake-hosted DNS automation: a Cake install key (`install_key`)
+- For bring-your-own DNS: a Route53 hosted zone plus a validated ACM certificate for your hostname
 
 ## What gets deployed
 
@@ -36,7 +39,7 @@ Set `vpc_id` plus `private_subnet_ids` and `public_subnet_ids` instead of `vpc_c
 
 By default, set `install_key` and let the module create + validate ACM DNS records through Cake-hosted DNS automation.
 
-For bring-your-own DNS, set both `zone_id` and `certificate_arn`, and omit `install_key`.
+For bring-your-own DNS, set `hostname`, `zone_id`, and `certificate_arn`, and omit `install_key`. See [examples/bring-your-own-dns](examples/bring-your-own-dns/) for a `demo.cake.ai` example.
 
 ## CI/CD with GitHub Actions
 
@@ -52,10 +55,11 @@ See [examples/github-actions](examples/github-actions/). The example provisions 
 
 ## Examples
 
-| Path                                                | Description                                                |
-| --------------------------------------------------- | ---------------------------------------------------------- |
-| [examples/basic](examples/basic/)                   | One `terraform apply`, new VPC, Cake-hosted DNS automation |
-| [examples/github-actions](examples/github-actions/) | OIDC provider + deploy role for GitHub Actions             |
+| Path                                                          | Description                                                |
+| ------------------------------------------------------------- | ---------------------------------------------------------- |
+| [examples/basic](examples/basic/)                             | One `terraform apply`, new VPC, Cake-hosted DNS automation |
+| [examples/bring-your-own-dns](examples/bring-your-own-dns/)   | New VPC with `modules/dns` for `demo.cake.ai`              |
+| [examples/github-actions](examples/github-actions/)           | OIDC provider + deploy role for GitHub Actions             |
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
