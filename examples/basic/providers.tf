@@ -2,8 +2,18 @@ provider "aws" {
   region = var.region
 }
 
+locals {
+  cake_agents_chart_upstream_registry_parts = split(".", var.cake_agents_chart_upstream_registry)
+}
+
+provider "aws" {
+  alias  = "cake_upstream_ecr"
+  region = local.cake_agents_chart_upstream_registry_parts[3]
+}
+
 data "aws_ecr_authorization_token" "cake_upstream_ecr" {
-  registry_id = split(".", var.cake_agents_chart_upstream_registry)[0]
+  provider    = aws.cake_upstream_ecr
+  registry_id = local.cake_agents_chart_upstream_registry_parts[0]
 }
 
 data "aws_region" "current" {}
