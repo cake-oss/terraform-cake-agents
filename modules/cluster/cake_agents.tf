@@ -80,6 +80,15 @@ resource "helm_release" "cake_agents" {
         )
       }
       pathPrefix = "/"
+      istio = {
+        enabled = false
+        authorizationPolicy = {
+          create = false
+        }
+        gateway = {
+          create = false
+        }
+      }
       postgresql = {
         enabled = false
       }
