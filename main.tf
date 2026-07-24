@@ -86,11 +86,13 @@ module "cluster" {
   route53_zone_id = local.zone_id
   certificate_arn = local.certificate_arn
 
-  vpc_cidr           = var.vpc_cidr
-  vpc_id             = var.vpc_id
-  private_subnet_ids = var.private_subnet_ids
-  public_subnet_ids  = var.public_subnet_ids
-  nat_gateway_per_az = var.nat_gateway_per_az
+  vpc_cidr                        = var.vpc_cidr
+  vpc_id                          = var.vpc_id
+  private_subnet_ids              = var.private_subnet_ids
+  public_subnet_ids               = var.public_subnet_ids
+  nat_gateway_per_az              = var.nat_gateway_per_az
+  enable_vpc_flow_logs            = var.enable_vpc_flow_logs
+  vpc_flow_logs_retention_in_days = var.vpc_flow_logs_retention_in_days
 
   kubernetes_version      = var.kubernetes_version
   deploy_role_name        = var.deploy_role_name

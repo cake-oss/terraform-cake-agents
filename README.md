@@ -22,6 +22,7 @@ If you want to use your own hostname instead of a Cake-managed `cakeagents.ai` h
 | Component | Purpose |
 | --- | --- |
 | VPC + subnets across 3 AZs | Network for the cluster (or bring your own — see below) |
+| VPC Flow Logs | Optional network traffic logs to CloudWatch Logs for module-created VPCs (`enable_vpc_flow_logs`) |
 | EKS cluster | Kubernetes control plane, etcd secrets envelope-encrypted with a per-cluster KMS CMK |
 | Karpenter | Workload-node autoscaler (`m5`/`m6i`/`m7i` on-demand) |
 | AWS Load Balancer Controller | Provisions the ALB from the cake-agents Ingress |
@@ -115,6 +116,7 @@ See [examples/github-actions](examples/github-actions/). The example provisions 
 | <a name="input_enable_eni_cleanup"></a> [enable\_eni\_cleanup](#input\_enable\_eni\_cleanup) | On destroy, run an aws-cli local-exec that deletes leftover detached ENIs left in the VPC, which EKS/VPC-CNI can leak and which block subnet/VPC deletion. Node termination is handled by enable\_karpenter\_drain (Karpenter nodes) and Terraform (system node group); this only sweeps ENIs. Requires the aws CLI on the machine running terraform. Set false to skip. | `bool` | `true` | no |
 | <a name="input_enable_karpenter_drain"></a> [enable\_karpenter\_drain](#input\_enable\_karpenter\_drain) | On destroy, block the Karpenter Helm uninstall until Karpenter has drained and terminated the nodes it launched (the NodePool is deleted first). Prevents orphaned worker nodes whose ENIs block subnet/VPC teardown. Requires the aws CLI on the machine running terraform. Set false to skip the wait and rely on enable\_eni\_cleanup. | `bool` | `true` | no |
 | <a name="input_enable_s3_object_storage"></a> [enable\_s3\_object\_storage](#input\_enable\_s3\_object\_storage) | Provision S3 object storage for cake-agents and configure the Helm chart to use it. | `bool` | `true` | no |
+| <a name="input_enable_vpc_flow_logs"></a> [enable\_vpc\_flow\_logs](#input\_enable\_vpc\_flow\_logs) | Set to true to enable VPC Flow Logs (ALL traffic) to a CloudWatch Logs log group for module-created VPCs. Ignored when bringing your own VPC. | `bool` | `false` | no |
 | <a name="input_extra_hosts"></a> [extra\_hosts](#input\_extra\_hosts) | Additional entries appended to the cake-agents controlPlane.extraHosts. The OIDC issuer host is added automatically. | `list(string)` | `[]` | no |
 | <a name="input_hostname"></a> [hostname](#input\_hostname) | Apex hostname the cake-agents UI/API is served from (e.g. agents.example.com). Optional when install\_key is set, in which case hostname is discovered from Cake Console. | `string` | `null` | no |
 | <a name="input_install_key"></a> [install\_key](#input\_install\_key) | Install key for Cake-hosted DNS automation. Required when zone\_id/certificate\_arn are unset. | `string` | `null` | no |
@@ -131,6 +133,7 @@ See [examples/github-actions](examples/github-actions/). The example provisions 
 | <a name="input_s3_prefix"></a> [s3\_prefix](#input\_s3\_prefix) | Prefix inside the S3 bucket used by cake-agents. | `string` | `"sessions"` | no |
 | <a name="input_slack"></a> [slack](#input\_slack) | Optional Slack credentials for the cake-agents Helm chart. | <pre>object({<br/>    signing_secret = string<br/>    bot_token      = string<br/>  })</pre> | `null` | no |
 | <a name="input_vpc_cidr"></a> [vpc\_cidr](#input\_vpc\_cidr) | CIDR block for a new VPC. Mutually exclusive with vpc\_id. | `string` | `null` | no |
+| <a name="input_vpc_flow_logs_retention_in_days"></a> [vpc\_flow\_logs\_retention\_in\_days](#input\_vpc\_flow\_logs\_retention\_in\_days) | Number of days to retain VPC Flow Logs in CloudWatch Logs when enable\_vpc\_flow\_logs is true. Ignored when bringing your own VPC. | `number` | `365` | no |
 | <a name="input_vpc_id"></a> [vpc\_id](#input\_vpc\_id) | Existing VPC ID. When set, also provide private\_subnet\_ids and public\_subnet\_ids. Mutually exclusive with vpc\_cidr. | `string` | `null` | no |
 | <a name="input_zone_id"></a> [zone\_id](#input\_zone\_id) | Existing Route53 hosted zone ID for hostname. If null, a new zone is created (and you must delegate it from the parent zone — see the nameservers output). | `string` | `null` | no |
 

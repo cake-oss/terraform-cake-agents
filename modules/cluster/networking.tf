@@ -30,6 +30,22 @@ module "vpc" {
   single_nat_gateway   = !var.nat_gateway_per_az
   enable_dns_hostnames = true
 
+  enable_flow_log                                 = var.enable_vpc_flow_logs
+  create_flow_log_cloudwatch_log_group            = var.enable_vpc_flow_logs
+  create_flow_log_cloudwatch_iam_role             = var.enable_vpc_flow_logs
+  flow_log_cloudwatch_log_group_name_prefix       = "/aws/vpc-flow-logs/"
+  flow_log_cloudwatch_log_group_name_suffix       = var.name
+  flow_log_cloudwatch_log_group_retention_in_days = var.vpc_flow_logs_retention_in_days
+  flow_log_max_aggregation_interval               = 60
+  flow_log_traffic_type                           = "ALL"
+  vpc_flow_log_iam_role_name                      = "${var.name}-vpc-flow-logs"
+  vpc_flow_log_iam_role_use_name_prefix           = false
+  vpc_flow_log_iam_policy_name                    = "${var.name}-vpc-flow-logs"
+  vpc_flow_log_iam_policy_use_name_prefix         = false
+  vpc_flow_log_tags = {
+    Name = "${var.name}-vpc-flow-logs"
+  }
+
   private_subnet_tags = {
     "karpenter.sh/discovery"          = var.name
     "kubernetes.io/role/internal-elb" = "1"

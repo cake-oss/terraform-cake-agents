@@ -110,6 +110,23 @@ variable "nat_gateway_per_az" {
   default     = false
 }
 
+variable "enable_vpc_flow_logs" {
+  type        = bool
+  description = "Set to true to enable VPC Flow Logs (ALL traffic) to a CloudWatch Logs log group for module-created VPCs. Ignored when bringing your own VPC."
+  default     = false
+}
+
+variable "vpc_flow_logs_retention_in_days" {
+  type        = number
+  description = "Number of days to retain VPC Flow Logs in CloudWatch Logs when enable_vpc_flow_logs is true. Ignored when bringing your own VPC."
+  default     = 365
+
+  validation {
+    condition     = contains([1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653], var.vpc_flow_logs_retention_in_days)
+    error_message = "vpc_flow_logs_retention_in_days must be a valid CloudWatch Logs retention period."
+  }
+}
+
 # --- Cluster knobs ---
 
 variable "kubernetes_version" {

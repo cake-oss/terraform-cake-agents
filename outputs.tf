@@ -45,7 +45,7 @@ output "nameservers_bind" {
 
 output "acm_validation_records" {
   description = "ACM validation CNAMEs for the install_key flow (informational). Null when bringing your own DNS with certificate_arn."
-  value = var.install_key == null ? null : nonsensitive([
+  value = nonsensitive(var.install_key == null ? null : [
     for dvo in aws_acm_certificate.cake_hosted[0].domain_validation_options : {
       name  = dvo.resource_record_name
       type  = dvo.resource_record_type

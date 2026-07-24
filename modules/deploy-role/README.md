@@ -7,7 +7,7 @@ The permissions are split along the same optional-component boundaries as the ro
 | Policy | AWS name | Always attached? | When needed |
 | --- | --- | :---: | --- |
 | `required` | `<var.name>-required` | yes | Always — EKS, RDS, KMS, IAM, ECR, security groups, launch templates, CloudWatch logs, SSM AMI lookups, ELB read, Route53 record-level perms for the apex alias |
-| `vpc` | `<var.name>-vpc` | yes by default | Only when the root module creates the VPC (root `vpc_cidr` set) |
+| `vpc` | `<var.name>-vpc` | yes by default | Only when the root module creates the VPC (root `vpc_cidr` set), including VPC Flow Logs when enabled |
 | `dns` | `<var.name>-dns` | yes by default | Only when the root module creates the Route53 zone + ACM cert (root `zone_id` null) |
 
 All three policies are **always created** so they're available to attach manually later. The `attach_optional_policies` variable only controls which of `vpc` and `dns` get attached to the role this module creates.

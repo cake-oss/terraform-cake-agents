@@ -8,8 +8,8 @@
 #                    lookups, ELB read, and Route53 record-level perms for
 #                    the apex alias.
 # - <name>-vpc:      VPC creation perms (CreateVpc, subnets, route tables,
-#                    NAT, IGW, EIPs, network ACLs). Only needed when the
-#                    root module creates the VPC (var.vpc_cidr set).
+#                    NAT, IGW, EIPs, network ACLs, VPC Flow Logs). Only needed
+#                    when the root module creates the VPC (var.vpc_cidr set).
 # - <name>-dns:      Route53 zone + ACM cert lifecycle. Only needed when
 #                    the root module creates the zone (var.zone_id null).
 #
@@ -371,6 +371,8 @@ data "aws_iam_policy_document" "vpc" {
       "ec2:DeleteNetworkAclEntry",
       "ec2:ReplaceNetworkAclEntry",
       "ec2:ReplaceNetworkAclAssociation",
+      "ec2:CreateFlowLogs",
+      "ec2:DeleteFlowLogs",
     ]
     resources = ["*"]
   }
