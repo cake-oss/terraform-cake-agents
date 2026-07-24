@@ -190,7 +190,8 @@ resource "helm_release" "cake_agents" {
 }
 
 # Ingress for the cake-agents service. Routes hostname -> svc/cake-agents:80
-# via an internet-facing ALB with the supplied ACM cert.
+# via an internet-facing ALB with the supplied ACM cert and a FIPS TLS 1.2+
+# SSL policy.
 resource "kubernetes_ingress_v1" "cake_agents" {
   wait_for_load_balancer = true
 
@@ -204,6 +205,7 @@ resource "kubernetes_ingress_v1" "cake_agents" {
       "alb.ingress.kubernetes.io/listen-ports"             = jsonencode([{ HTTPS = 443 }, { HTTP = 80 }])
       "alb.ingress.kubernetes.io/load-balancer-attributes" = "routing.http.preserve_host_header.enabled=true"
       "alb.ingress.kubernetes.io/ssl-redirect"             = "443"
+      "alb.ingress.kubernetes.io/ssl-policy"               = "ELBSecurityPolicy-TLS13-1-2-FIPS-2023-04"
       "alb.ingress.kubernetes.io/certificate-arn"          = var.certificate_arn
     }
   }

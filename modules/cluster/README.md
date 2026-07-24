@@ -8,7 +8,7 @@ Provisions everything to run cake-agents on AWS:
 - RDS Postgres for cake-agents state
 - S3 object storage for cake-agents session artifacts (default-on)
 - ECR pull-through cache for the cake-agents Helm chart (default-on)
-- The cake-agents Helm release + ALB Ingress + Route53 alias record
+- The cake-agents Helm release + ALB Ingress using a FIPS TLS 1.2+ SSL policy + Route53 alias record
 
 ## Bring your own VPC
 
