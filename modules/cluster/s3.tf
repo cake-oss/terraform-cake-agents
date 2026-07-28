@@ -49,6 +49,7 @@ data "aws_iam_policy_document" "cake_agents_s3" {
       "s3:GetObject",
       "s3:ListMultipartUploadParts",
       "s3:PutObject",
+      "s3:DeleteObject",
     ]
     resources = ["${aws_s3_bucket.cake_agents[0].arn}/*"]
   }
