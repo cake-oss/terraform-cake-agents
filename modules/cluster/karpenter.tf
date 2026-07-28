@@ -16,8 +16,6 @@ module "karpenter" {
   node_iam_role_additional_policies = var.enable_ecr_pull_through ? {
     ecr_pull_through = aws_iam_policy.node_ecr_pull_through[0].arn
   } : {}
-
-  depends_on = [module.eks]
 }
 
 resource "helm_release" "karpenter" {
