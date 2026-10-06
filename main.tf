@@ -117,6 +117,7 @@ module "cluster" {
 
   extra_hosts = var.extra_hosts
 
+  istio = var.istio
   oidc  = var.oidc
   slack = var.slack
 }

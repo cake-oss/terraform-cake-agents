@@ -31,6 +31,7 @@ If you want to use your own hostname instead of a Cake-managed `cakeagents.ai` h
 | S3 bucket | Object storage for cake-agents session artifacts |
 | ECR pull-through cache | Mirrors the cake-agents chart and images into the caller's ECR |
 | cake-agents Helm release | The app, behind `https://<hostname>` |
+| istio + cert-manager | Optional mesh in front of cake-agents (`istio.enabled`), with the ALB re-encrypting to the ingressgateway |
 
 ## Bring your own VPC
 
@@ -41,6 +42,35 @@ Set `vpc_id` plus `private_subnet_ids` and `public_subnet_ids` instead of `vpc_c
 By default, set `install_key` and let the module create + validate ACM DNS records through Cake-hosted DNS automation.
 
 For bring-your-own DNS, set `hostname`, `zone_id`, and `certificate_arn`, and omit `install_key`. See [examples/bring-your-own-dns](examples/bring-your-own-dns/) for a `demo.cake.ai` example.
+
+## Istio
+
+By default the ALB routes `hostname` straight to `svc/cake-agents:80`. Set `istio.enabled = true` to put the mesh in the middle instead:
+
+```hcl
+istio = {
+  enabled = true
+}
+```
+
+That is the whole switch. The cluster module then:
+
+- installs istio (`base` → `istiod` → `istio-ingressgateway`, pinned in [modules/cluster/istio.tf](modules/cluster/istio.tf)), leaving injection opt-in so only the cake-agents pods — which carry `sidecar.istio.io/inject=true` — get sidecars and the rest of the cluster keeps running without istiod in its admission path
+- opens 15017 on the node security group so the EKS API server can reach istiod's injection/validation webhooks
+- installs cert-manager and issues a self-signed credential for the Gateway
+- stops creating the cake-agents Ingress and fronts the ingressgateway with the ALB instead, rendering a wildcard-host Gateway for the chart's VirtualService to bind to
+
+| Hop | Encryption |
+| --- | --- |
+| client → ALB | TLS with the ACM certificate (`certificate_arn`) |
+| ALB → istio-ingressgateway | TLS with the self-signed credential: istio can't use an ACM public certificate (ACM never exports the key), and the ALB doesn't validate its targets' certificates |
+| istio-ingressgateway → cake-agents | istio auto-mTLS between sidecars |
+
+The Gateway the module renders uses `hosts: ["*"]` on purpose. istio turns a TLS server's hosts into the listener's SNI match, and an ALB never sends SNI to its targets, so the chart's host-scoped Gateway would reject every connection from the load balancer (`filter_chain_not_found`). With a wildcard server the handshake succeeds and the hostname is matched on the HTTP Host header by the chart's VirtualService — which is why the ALB keeps `routing.http.preserve_host_header.enabled=true`.
+
+The remaining `istio` attributes (`inject`, `gateway.*`, `authorization_policy`, `outbound_allowlist`) override the chart's values. `gateway.name`, `gateway.create` and `authorization_policy.create` default to `null`, which resolves against the mesh this module installs rather than the chart's upstream defaults: the module owns the Gateway (`create = false`, `name = "istio-system/cake-agents-gateway"`), and the chart's ingress AuthorizationPolicies stay off because this istiod configures no `oauth2-proxy` extension provider — istiod turns an unresolvable `CUSTOM` action into deny rules for the matched paths, which would 403 the whole app. Point `gateway.name` at `namespace/name` to bind the VirtualService to a different, shared Gateway; that only works if it is wildcard-hosted or your front end sends SNI.
+
+Flipping `istio.enabled` replaces the load balancer: the ALB, its target groups and the Route53 alias target are all recreated, so expect a brief cutover.
 
 ## CI/CD with GitHub Actions
 
@@ -120,6 +150,7 @@ See [examples/github-actions](examples/github-actions/). The example provisions 
 | <a name="input_extra_hosts"></a> [extra\_hosts](#input\_extra\_hosts) | Additional entries appended to the cake-agents controlPlane.extraHosts. The OIDC issuer host is added automatically. | `list(string)` | `[]` | no |
 | <a name="input_hostname"></a> [hostname](#input\_hostname) | Apex hostname the cake-agents UI/API is served from (e.g. agents.example.com). Optional when install\_key is set, in which case hostname is discovered from Cake Console. | `string` | `null` | no |
 | <a name="input_install_key"></a> [install\_key](#input\_install\_key) | Install key for Cake-hosted DNS automation. Required when zone\_id/certificate\_arn are unset. | `string` | `null` | no |
+| <a name="input_istio"></a> [istio](#input\_istio) | Optional istio configuration for the cake-agents Helm chart, overriding the chart's istio values. When null, no istio block is passed and the chart defaults apply (istio disabled). Setting enabled = true also installs the mesh (istio base, istiod, ingressgateway), issues the gateway's TLS credential with cert-manager, and fronts the gateway with the ALB instead of routing the ALB straight to the cake-agents Service. gateway.name, gateway.create and authorization\_policy.create default to null, which resolves against the mesh the module installs rather than the chart defaults: the module renders a wildcard-host Gateway in istio-system (create = false, name = istio-system/cake-agents-gateway) because the chart's host-scoped Gateway cannot serve an ALB, which sends no SNI, and the chart's ingress AuthorizationPolicies stay off because the module's istiod configures no oauth2-proxy extension provider. Set gateway.name to namespace/name to bind the VirtualService to a different, shared Gateway -- only sensible with a wildcard-host Gateway or a front end that does send SNI. Each outbound\_allowlist entry becomes a ServiceEntry, and a non-empty list also enforces REGISTRY\_ONLY outbound traffic via a Sidecar resource. | <pre>object({<br/>    enabled = optional(bool, false)<br/>    inject  = optional(bool, true)<br/>    gateway = optional(object({<br/>      name            = optional(string)<br/>      create          = optional(bool)<br/>      credential_name = optional(string, "istio-gateway-certificate-tls")<br/>    }), {})<br/>    authorization_policy = optional(object({<br/>      create = optional(bool)<br/>    }), {})<br/>    outbound_allowlist = optional(list(object({<br/>      name  = string<br/>      hosts = list(string)<br/>      ports = optional(list(object({<br/>        name     = optional(string)<br/>        number   = number<br/>        protocol = optional(string, "TLS")<br/>      })))<br/>    })), [])<br/>  })</pre> | `null` | no |
 | <a name="input_kubernetes_version"></a> [kubernetes\_version](#input\_kubernetes\_version) | EKS Kubernetes minor version. | `string` | `"1.35"` | no |
 | <a name="input_name"></a> [name](#input\_name) | Cluster name. Used for the EKS cluster, VPC (when created), KMS aliases, and the karpenter.sh/discovery tag value. | `string` | n/a | yes |
 | <a name="input_nat_gateway_per_az"></a> [nat\_gateway\_per\_az](#input\_nat\_gateway\_per\_az) | When creating a VPC, provision one NAT gateway per AZ. Ignored when bringing your own VPC. | `bool` | `false` | no |

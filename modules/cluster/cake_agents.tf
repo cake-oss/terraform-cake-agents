@@ -89,6 +89,63 @@ resource "kubernetes_secret_v1" "cake_agents_slack_creds" {
   type = "Opaque"
 }
 
+# Renders var.istio into the chart's istio block. Most attributes keep the
+# chart's own defaults (mirrored by the variable type), so a partial override
+# still produces a complete block. When var.istio is null nothing is passed at
+# all and the chart defaults stand.
+#
+# Three attributes resolve against what this module installs instead, because
+# the chart defaults describe a shared upstream mesh rather than the one
+# istio.tf builds:
+#
+#   gateway.name/create        there is no shared Kubeflow gateway here, and the
+#                              chart's own Gateway is host-scoped -- unusable
+#                              behind an ALB, which sends no SNI. istio.tf
+#                              renders a wildcard-host Gateway instead, so the
+#                              chart must not create one and its VirtualService
+#                              is pointed at istio-system/cake-agents-gateway.
+#   authorizationPolicy.create the chart's ingress policies reference an
+#                              oauth2-proxy extension provider that this
+#                              module's istiod does not configure, and istiod
+#                              turns an unresolvable CUSTOM action into deny
+#                              rules for the matched paths -- which would 403
+#                              the entire app. Off unless explicitly asked for.
+locals {
+  cake_agents_istio_values = var.istio == null ? {} : {
+    istio = {
+      enabled = var.istio.enabled
+      inject  = var.istio.inject
+      gateway = {
+        name           = var.istio.gateway.name != null ? var.istio.gateway.name : (local.istio_enabled ? "${local.istio_namespace}/${local.istio_gateway_config_name}" : "kubeflow/kubeflow-gateway")
+        create         = var.istio.gateway.create != null ? var.istio.gateway.create : !local.istio_enabled
+        credentialName = local.istio_gateway_credential_name
+      }
+      authorizationPolicy = {
+        create = var.istio.authorization_policy.create != null ? var.istio.authorization_policy.create : !local.istio_enabled
+      }
+      outboundAllowlist = [
+        for entry in var.istio.outbound_allowlist : merge(
+          {
+            name  = entry.name
+            hosts = entry.hosts
+          },
+          entry.ports == null ? {} : {
+            ports = [
+              for port in entry.ports : merge(
+                {
+                  number   = port.number
+                  protocol = port.protocol
+                },
+                port.name == null ? {} : { name = port.name },
+              )
+            ]
+          },
+        )
+      ]
+    }
+  }
+}
+
 resource "helm_release" "cake_agents" {
   namespace  = kubernetes_namespace_v1.cake_agents.metadata[0].name
   name       = "cake-agents"
@@ -171,6 +228,7 @@ resource "helm_release" "cake_agents" {
         var.oidc.scopes == null ? {} : { scopes = var.oidc.scopes },
       )
     },
+    local.cake_agents_istio_values,
   ))]
 
   depends_on = [
@@ -180,6 +238,16 @@ resource "helm_release" "cake_agents" {
     kubernetes_secret_v1.cake_agents_slack_creds,
     kubernetes_secret_v1.cake_agents_oidc_creds,
     aws_eks_pod_identity_association.cake_agents,
+    # With istio enabled the chart renders a Gateway and a VirtualService, so
+    # the mesh CRDs (istio-base), istiod and the gateway have to exist first --
+    # an apply against a cluster without the CRDs fails with "no matches for
+    # kind Gateway". The credential is issued first so istio can terminate TLS
+    # as soon as the Gateway lands; istio picks it up over SDS either way.
+    helm_release.istio_base,
+    helm_release.istiod,
+    helm_release.istio_ingressgateway,
+    kubectl_manifest.cake_agents_gateway,
+    kubectl_manifest.cake_agents_gateway_certificate,
     # Tear the app down before the Karpenter NodePool. Deleting the NodePool
     # makes Karpenter drain the workload nodes; if that happens while the app is
     # still up, the in-flight ALB/target-group teardown loses its targets mid
@@ -192,7 +260,14 @@ resource "helm_release" "cake_agents" {
 # Ingress for the cake-agents service. Routes hostname -> svc/cake-agents:80
 # via an internet-facing ALB with the supplied ACM cert and a FIPS TLS 1.2+
 # SSL policy.
+#
+# Skipped when istio is enabled: istio.tf then fronts the istio ingressgateway
+# with the ALB instead, and the chart's VirtualService routes to the service.
+# Flipping istio.enabled therefore replaces the load balancer -- the ALB, its
+# target groups and the Route53 alias target are all recreated.
 resource "kubernetes_ingress_v1" "cake_agents" {
+  count = local.istio_enabled ? 0 : 1
+
   wait_for_load_balancer = true
 
   metadata {
@@ -243,14 +318,18 @@ resource "kubernetes_ingress_v1" "cake_agents" {
 }
 
 # Look up the LBC-provisioned ALB by tags so we can wire its zone_id into
-# the Route53 alias record.
+# the Route53 alias record. The stack tag names the Ingress that owns the ALB,
+# which is the istio-system one when the mesh is enabled.
 data "aws_lb" "cake_agents" {
   tags = {
     "elbv2.k8s.aws/cluster" = module.eks.cluster_name
-    "ingress.k8s.aws/stack" = "${kubernetes_namespace_v1.cake_agents.metadata[0].name}/${kubernetes_ingress_v1.cake_agents.metadata[0].name}"
+    "ingress.k8s.aws/stack" = local.cake_agents_alb_stack
   }
 
-  depends_on = [kubernetes_ingress_v1.cake_agents]
+  depends_on = [
+    kubernetes_ingress_v1.cake_agents,
+    kubernetes_ingress_v1.cake_agents_istio,
+  ]
 }
 
 resource "aws_route53_record" "cake_agents_apex" {

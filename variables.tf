@@ -213,6 +213,32 @@ variable "extra_hosts" {
   default     = []
 }
 
+variable "istio" {
+  type = object({
+    enabled = optional(bool, false)
+    inject  = optional(bool, true)
+    gateway = optional(object({
+      name            = optional(string)
+      create          = optional(bool)
+      credential_name = optional(string, "istio-gateway-certificate-tls")
+    }), {})
+    authorization_policy = optional(object({
+      create = optional(bool)
+    }), {})
+    outbound_allowlist = optional(list(object({
+      name  = string
+      hosts = list(string)
+      ports = optional(list(object({
+        name     = optional(string)
+        number   = number
+        protocol = optional(string, "TLS")
+      })))
+    })), [])
+  })
+  description = "Optional istio configuration for the cake-agents Helm chart, overriding the chart's istio values. When null, no istio block is passed and the chart defaults apply (istio disabled). Setting enabled = true also installs the mesh (istio base, istiod, ingressgateway), issues the gateway's TLS credential with cert-manager, and fronts the gateway with the ALB instead of routing the ALB straight to the cake-agents Service. gateway.name, gateway.create and authorization_policy.create default to null, which resolves against the mesh the module installs rather than the chart defaults: the module renders a wildcard-host Gateway in istio-system (create = false, name = istio-system/cake-agents-gateway) because the chart's host-scoped Gateway cannot serve an ALB, which sends no SNI, and the chart's ingress AuthorizationPolicies stay off because the module's istiod configures no oauth2-proxy extension provider. Set gateway.name to namespace/name to bind the VirtualService to a different, shared Gateway -- only sensible with a wildcard-host Gateway or a front end that does send SNI. Each outbound_allowlist entry becomes a ServiceEntry, and a non-empty list also enforces REGISTRY_ONLY outbound traffic via a Sidecar resource."
+  default     = null
+}
+
 variable "oidc" {
   type = object({
     provider_id   = string

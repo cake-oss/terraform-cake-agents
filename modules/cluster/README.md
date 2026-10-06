@@ -9,6 +9,7 @@ Provisions everything to run cake-agents on AWS:
 - S3 object storage for cake-agents session artifacts (default-on)
 - ECR pull-through cache for the cake-agents Helm chart (default-on)
 - The cake-agents Helm release + ALB Ingress using a FIPS TLS 1.2+ SSL policy + Route53 alias record
+- Optional istio mesh (`istio.enabled`): istio base/istiod/ingressgateway, a cert-manager-issued self-signed gateway credential, and an ALB that re-encrypts to the ingressgateway instead of routing to the cake-agents Service
 
 ## Bring your own VPC
 
@@ -86,14 +87,23 @@ This requires `helm` and `aws` CLIs on the machine running `terraform apply`. Se
 | [aws_route53_record.cake_agents_apex](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record) | resource |
 | [aws_s3_bucket.cake_agents](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket) | resource |
 | [aws_security_group.cake_agents_db](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group) | resource |
+| [aws_vpc_security_group_ingress_rule.istiod_webhook_from_cluster](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule) | resource |
 | [helm_release.aws_load_balancer_controller](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
 | [helm_release.cake_agents](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
+| [helm_release.cert_manager](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
+| [helm_release.istio_base](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
+| [helm_release.istio_ingressgateway](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
+| [helm_release.istiod](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
 | [helm_release.karpenter](https://registry.terraform.io/providers/hashicorp/helm/latest/docs/resources/release) | resource |
+| [kubectl_manifest.cake_agents_gateway](https://registry.terraform.io/providers/alekc/kubectl/latest/docs/resources/manifest) | resource |
+| [kubectl_manifest.cake_agents_gateway_certificate](https://registry.terraform.io/providers/alekc/kubectl/latest/docs/resources/manifest) | resource |
+| [kubectl_manifest.cert_manager_selfsigned_issuer](https://registry.terraform.io/providers/alekc/kubectl/latest/docs/resources/manifest) | resource |
 | [kubectl_manifest.karpenter_ec2nodeclass](https://registry.terraform.io/providers/alekc/kubectl/latest/docs/resources/manifest) | resource |
 | [kubectl_manifest.karpenter_nodepool](https://registry.terraform.io/providers/alekc/kubectl/latest/docs/resources/manifest) | resource |
 | [kubectl_manifest.storageclass_gp3](https://registry.terraform.io/providers/alekc/kubectl/latest/docs/resources/manifest) | resource |
 | [kubernetes_annotations.gp2_not_default](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/annotations) | resource |
 | [kubernetes_ingress_v1.cake_agents](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/ingress_v1) | resource |
+| [kubernetes_ingress_v1.cake_agents_istio](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/ingress_v1) | resource |
 | [kubernetes_namespace_v1.cake_agents](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/namespace_v1) | resource |
 | [kubernetes_secret_v1.cake_agents_db_creds](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/secret_v1) | resource |
 | [kubernetes_secret_v1.cake_agents_oidc_creds](https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/secret_v1) | resource |
@@ -134,6 +144,7 @@ This requires `helm` and `aws` CLIs on the machine running `terraform apply`. Se
 | <a name="input_enable_vpc_flow_logs"></a> [enable\_vpc\_flow\_logs](#input\_enable\_vpc\_flow\_logs) | Set to true to enable VPC Flow Logs (ALL traffic) to a CloudWatch Logs log group for module-created VPCs. Ignored when bringing your own VPC. | `bool` | `false` | no |
 | <a name="input_extra_hosts"></a> [extra\_hosts](#input\_extra\_hosts) | Additional entries appended to the cake-agents controlPlane.extraHosts. The OIDC issuer host is added automatically. | `list(string)` | `[]` | no |
 | <a name="input_hostname"></a> [hostname](#input\_hostname) | Apex hostname for the cake-agents Ingress (e.g. agents.example.com). Must be covered by certificate\_arn and resolvable via route53\_zone\_id. | `string` | n/a | yes |
+| <a name="input_istio"></a> [istio](#input\_istio) | Optional istio configuration for the cake-agents Helm chart, overriding the chart's istio values. When null, no istio block is passed and the chart defaults apply (istio disabled). Setting enabled = true also installs the mesh (istio base, istiod, ingressgateway), issues the gateway's TLS credential with cert-manager, and fronts the gateway with the ALB instead of routing the ALB straight to the cake-agents Service. gateway.name, gateway.create and authorization\_policy.create default to null, which resolves against the mesh the module installs rather than the chart defaults: the module renders a wildcard-host Gateway in istio-system (create = false, name = istio-system/cake-agents-gateway) because the chart's host-scoped Gateway cannot serve an ALB, which sends no SNI, and the chart's ingress AuthorizationPolicies stay off because the module's istiod configures no oauth2-proxy extension provider. Set gateway.name to namespace/name to bind the VirtualService to a different, shared Gateway -- only sensible with a wildcard-host Gateway or a front end that does send SNI. Each outbound\_allowlist entry becomes a ServiceEntry, and a non-empty list also enforces REGISTRY\_ONLY outbound traffic via a Sidecar resource. | <pre>object({<br/>    enabled = optional(bool, false)<br/>    inject  = optional(bool, true)<br/>    gateway = optional(object({<br/>      name            = optional(string)<br/>      create          = optional(bool)<br/>      credential_name = optional(string, "istio-gateway-certificate-tls")<br/>    }), {})<br/>    authorization_policy = optional(object({<br/>      create = optional(bool)<br/>    }), {})<br/>    outbound_allowlist = optional(list(object({<br/>      name  = string<br/>      hosts = list(string)<br/>      ports = optional(list(object({<br/>        name     = optional(string)<br/>        number   = number<br/>        protocol = optional(string, "TLS")<br/>      })))<br/>    })), [])<br/>  })</pre> | `null` | no |
 | <a name="input_kubernetes_version"></a> [kubernetes\_version](#input\_kubernetes\_version) | EKS Kubernetes minor version. | `string` | `"1.35"` | no |
 | <a name="input_name"></a> [name](#input\_name) | Cluster name. Used for the EKS cluster, VPC (when created), and the karpenter.sh/discovery tag value. | `string` | n/a | yes |
 | <a name="input_nat_gateway_per_az"></a> [nat\_gateway\_per\_az](#input\_nat\_gateway\_per\_az) | When creating a VPC: one NAT gateway per AZ (true) or a single shared NAT (false, cheaper). Ignored when bringing your own VPC. | `bool` | `false` | no |
