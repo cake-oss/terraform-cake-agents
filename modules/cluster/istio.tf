@@ -19,6 +19,11 @@
 locals {
   istio_enabled = var.istio != null && var.istio.enabled
 
+  # Whether to label the release namespace istio-injection=enabled. See the
+  # namespace resource in cake_agents.tf for why namespace-level injection is
+  # needed on top of the chart's per-pod annotation.
+  istio_inject_namespace = var.istio == null ? false : (var.istio.enabled && var.istio.inject)
+
   istio_namespace = "istio-system"
 
   # Load-bearing name: the gateway chart derives its pod labels from the release
@@ -118,10 +123,12 @@ resource "helm_release" "istiod" {
 
   values = [yamlencode({
     sidecarInjectorWebhook = {
-      # Injection stays opt-in. The cake-agents pods carry
-      # sidecar.istio.io/inject=true, which istiod's "auto" webhook entry admits
-      # in any namespace that has no istio-injection/istio.io/rev label, so the
-      # mesh covers the app without enrolling the rest of the cluster.
+      # Injection is enabled per namespace rather than cluster-wide: the release
+      # namespace carries istio-injection=enabled (see
+      # kubernetes_namespace_v1.cake_agents), which enrols both the chart's own
+      # pods and the session StatefulSets the control plane creates at runtime
+      # -- those carry no sidecar.istio.io/inject annotation, so pod-level
+      # opt-in alone would leave them outside the mesh.
       #
       # Deliberately not enableNamespacesByDefault: that would make istiod a
       # cluster-wide admission dependency (every injector entry is

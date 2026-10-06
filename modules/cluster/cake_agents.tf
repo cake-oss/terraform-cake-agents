@@ -12,6 +12,22 @@ resource "time_sleep" "eks_auth_propagation" {
 resource "kubernetes_namespace_v1" "cake_agents" {
   metadata {
     name = "cake-agents"
+
+    # Injection has to be namespace-scoped, not just the chart's per-pod
+    # sidecar.istio.io/inject annotation: the control plane creates session
+    # StatefulSets in this namespace at runtime and they carry no istio
+    # annotation, so they would never be injected. That breaks the mesh in two
+    # ways. The chart's AuthorizationPolicies match source.namespaces and
+    # source.principals, which istio derives from the peer certificate, so they
+    # only match meshed callers -- a sidecar-less session pod is denied by the
+    # web-sidecar ALLOW policy. And istio.outboundAllowlist (a Sidecar in
+    # REGISTRY_ONLY mode plus ServiceEntries selecting data-plane pods) is inert
+    # without sidecars to apply it to.
+    #
+    # Scoped to this namespace on purpose: istiod's enableNamespacesByDefault
+    # stays off, so istiod is an admission dependency for cake-agents only, not
+    # for Karpenter, the AWS Load Balancer Controller or CoreDNS.
+    labels = local.istio_inject_namespace ? { "istio-injection" = "enabled" } : null
   }
 
   # Order this namespace's destroy ahead of two things that its finalizer

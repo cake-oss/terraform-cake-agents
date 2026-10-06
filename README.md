@@ -55,7 +55,7 @@ istio = {
 
 That is the whole switch. The cluster module then:
 
-- installs istio (`base` → `istiod` → `istio-ingressgateway`, pinned in [modules/cluster/istio.tf](modules/cluster/istio.tf)), leaving injection opt-in so only the cake-agents pods — which carry `sidecar.istio.io/inject=true` — get sidecars and the rest of the cluster keeps running without istiod in its admission path
+- installs istio (`base` → `istiod` → `istio-ingressgateway`, pinned in [modules/cluster/istio.tf](modules/cluster/istio.tf)) and labels the `cake-agents` namespace `istio-injection=enabled`, leaving cluster-wide default injection off so the rest of the cluster keeps running without istiod in its admission path. The namespace label — not the chart's `sidecar.istio.io/inject=true` pod annotation — is what meshes the session workloads the control plane creates at runtime, which carry no annotation
 - opens 15017 on the node security group so the EKS API server can reach istiod's injection/validation webhooks
 - installs cert-manager and issues a self-signed credential for the Gateway
 - stops creating the cake-agents Ingress and fronts the ingressgateway with the ALB instead, rendering a wildcard-host Gateway for the chart's VirtualService to bind to

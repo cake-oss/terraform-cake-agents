@@ -9,7 +9,7 @@ Provisions everything to run cake-agents on AWS:
 - S3 object storage for cake-agents session artifacts (default-on)
 - ECR pull-through cache for the cake-agents Helm chart (default-on)
 - The cake-agents Helm release + ALB Ingress using a FIPS TLS 1.2+ SSL policy + Route53 alias record
-- Optional istio mesh (`istio.enabled`): istio base/istiod/ingressgateway, a cert-manager-issued self-signed gateway credential, and an ALB that re-encrypts to the ingressgateway instead of routing to the cake-agents Service
+- Optional istio mesh (`istio.enabled`): istio base/istiod/ingressgateway, a cert-manager-issued self-signed gateway credential, `istio-injection=enabled` on the cake-agents namespace, and an ALB that re-encrypts to the ingressgateway instead of routing to the cake-agents Service
 
 ## Bring your own VPC
 
