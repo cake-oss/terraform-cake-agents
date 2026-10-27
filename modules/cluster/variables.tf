@@ -205,6 +205,15 @@ variable "extra_hosts" {
   default     = []
 }
 
+variable "extra_env" {
+  type = list(object({
+    name  = string
+    value = string
+  }))
+  description = "Additional env vars appended to the cake-agents controlPlane.deployment.extraEnv."
+  default     = []
+}
+
 variable "password_auth_enabled" {
   type        = bool
   description = "Set to true to enable email/password authentication in addition to OIDC. This allows users to log in with an email and password (managed by Cake) instead of an OIDC token."

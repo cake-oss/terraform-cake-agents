@@ -116,6 +116,7 @@ module "cluster" {
   enable_eni_cleanup     = var.enable_eni_cleanup
 
   extra_hosts = var.extra_hosts
+  extra_env   = var.extra_env
 
   istio = var.istio
   oidc  = var.oidc
