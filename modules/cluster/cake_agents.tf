@@ -198,6 +198,7 @@ resource "helm_release" "cake_agents" {
                 value = "true"
               }
             ] : [],
+            var.extra_env,
           )
         }
       }

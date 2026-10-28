@@ -213,6 +213,15 @@ variable "extra_hosts" {
   default     = []
 }
 
+variable "extra_env" {
+  type = list(object({
+    name  = string
+    value = string
+  }))
+  description = "Additional env vars appended to the cake-agents controlPlane.deployment.extraEnv."
+  default     = []
+}
+
 variable "istio" {
   type = object({
     enabled = optional(bool, false)
