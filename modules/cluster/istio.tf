@@ -336,6 +336,52 @@ resource "kubectl_manifest" "cake_agents_gateway_certificate" {
   ]
 }
 
+# Request access logging for the gateway and every sidecar, to the istio-proxy
+# container's stdout (kubectl logs <pod> -c istio-proxy).
+#
+# istio 1.30 removed the access-log fields from MeshConfig (istio/istio#37751),
+# so meshConfig.defaultConfig.accessLogFile no longer does anything. The
+# supported mechanism is the Telemetry API, which references access-log
+# providers from the mesh extensionProviders; istiod ships a built-in `envoy`
+# file provider (path: /dev/stdout), so this resource only has to select it.
+#
+# Each line carries the request line, response code and flags, X-Forwarded-For
+# (the client IP, fronted by the ALB), the full path (which encodes the tenant
+# prefix), the user agent, and the upstream workload. SERVER covers the
+# gateway listener plus every sidecar inbound listener; CLIENT covers every
+# sidecar outbound hop (and the gateway's upstream connections), so the full
+# client -> gateway -> control plane -> session chain is logged.
+resource "kubectl_manifest" "istio_access_logging" {
+  count = local.istio_enabled ? 1 : 0
+
+  yaml_body = yamlencode({
+    apiVersion = "telemetry.istio.io/v1"
+    kind       = "Telemetry"
+    metadata = {
+      name      = "access-log-stdout"
+      namespace = local.istio_namespace
+    }
+    spec = {
+      accessLogging = [
+        {
+          providers = [{ name = "envoy" }]
+          match     = { mode = "SERVER" }
+        },
+        {
+          providers = [{ name = "envoy" }]
+          match     = { mode = "CLIENT" }
+        },
+      ]
+    }
+  })
+
+  depends_on = [
+    # istio_base installs the telemetry.istio.io CRD.
+    helm_release.istio_base,
+    helm_release.istiod,
+  ]
+}
+
 # ALB in front of the istio ingressgateway, replacing the cake-agents Ingress
 # that cake_agents.tf creates when istio is disabled. It has to live in
 # istio-system: an Ingress can only reference Services in its own namespace, and
